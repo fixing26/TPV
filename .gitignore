@@ -1,9 +1,38 @@
-/.env
-/.venv
-/README.md
-/Roadmap.md
-/server.log
-/test_passlib.py
-/test_register.py
-/tpv.db
-/app/__pycache__
+# General
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment variables
+.env
+.env.*
+
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+tpv.db
+
+# Logs
+*.log
+logs/
+
+# Testing users/local
+test_*.py
+!tests/
+
+# Editor/IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+Thumbs.db
