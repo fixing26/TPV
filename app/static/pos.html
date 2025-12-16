@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TPV Portfolio - Terminal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/shared.css">
+    <link rel="stylesheet" href="css/pos.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="logo">
+                🛒 TPV App
+            </div>
+            <ul class="nav-links">
+                <a href="menu.html" class="nav-item">← Volver al Menú</a>
+                <a href="pos.html" class="nav-item active">Terminal TPV</a>
+                <a href="products.html" class="nav-item">Productos</a>
+                <a href="sales.html" class="nav-item">Ventas</a>
+            </ul>
+            <div class="user-info">
+                <button class="btn btn-secondary" onclick="logout()">Cerrar Sesión</button>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <div class="pos-layout">
+                <div class="products-section">
+                    <h2 style="margin-top: 0;">Productos</h2>
+                    <div id="pos-products" class="products-grid">
+                        <!-- Products injected here -->
+                    </div>
+                </div>
+                <div class="cart-panel">
+                    <div class="cart-header">Ticket Actual</div>
+                    <div id="cart-items" class="cart-items">
+                        <!-- Cart items injected here -->
+                        <div class="text-center" style="color: var(--text-muted); margin-top: 2rem;">
+                            Ticket vacío
+                        </div>
+                    </div>
+                    <div class="cart-footer">
+                        <div class="form-group" style="margin-bottom: 1rem;">
+                            <label class="form-label" style="font-size: 0.9rem;">Método de Pago</label>
+                            <select id="payment-method" class="form-input" style="padding: 0.5rem;">
+                                <option value="cash">Efectivo</option>
+                                <option value="card">Tarjeta</option>
+                            </select>
+                        </div>
+                        <div class="cart-total">
+                            <span>Total</span>
+                            <span id="cart-total">0.00€</span>
+                        </div>
+                        <button class="btn btn-primary" onclick="checkout()">COBRAR</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/pos.js"></script>
+</body>
+
+</html>

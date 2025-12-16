@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TPV Portfolio - Cierre de Caja</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/shared.css">
+    <link rel="stylesheet" href="css/menu.css">
+    <link rel="stylesheet" href="css/cash_closing.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <nav class="sidebar">
+            <div class="logo">
+                🛒 TPV App
+            </div>
+            <ul class="nav-links">
+                <a href="menu.html" class="nav-item">← Volver al Menú</a>
+                <a href="pos.html" class="nav-item">Terminal TPV</a>
+                <a href="products.html" class="nav-item">Productos</a>
+                <a href="sales.html" class="nav-item">Ventas</a>
+            </ul>
+        </nav>
+
+        <main class="main-content">
+            <h2 style="margin-top: 0; margin-bottom: 2rem;">Cierre de Caja</h2>
+
+            <div class="closing-container">
+                <!-- Option 1: Partial Close -->
+                <div class="closing-card">
+                    <h3>Cierre Parcial (Mantener Datos)</h3>
+                    <p>
+                        Calcula los totales actuales y genera un registro de cierre.<br>
+                        <strong>Las ventas SE MANTIENEN</strong> en el historial para el siguiente cierre.
+                    </p>
+                    <button class="btn btn-primary btn-large" onclick="handleClosing()">
+                        Realizar Cierre Parcial
+                    </button>
+                </div>
+
+                <!-- Option 2: Total Close (Delete) -->
+                <div class="closing-card warning-card">
+                    <h3>Cierre Total (Borrar Datos)</h3>
+                    <p>
+                        Calcula los totales y genera un registro de cierre.<br>
+                        <strong>⚠️ LAS VENTAS SE BORRARÁN</strong> para empezar un nuevo turno desde cero.
+                    </p>
+                    <button class="btn btn-secondary btn-large" onclick="confirmDelete()">
+                        Realizar Cierre Total
+                    </button>
+                </div>
+
+                <div id="result-area" class="result-box">
+                    <h4>Cierre completado con éxito</h4>
+                    <pre id="result-content"></pre>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/api.js?v=4"></script>
+    <script src="js/utils.js?v=4"></script>
+    <script src="js/cash_closing.js?v=6"></script>
+</body>
+
+</html>

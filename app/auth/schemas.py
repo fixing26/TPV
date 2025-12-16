@@ -1,0 +1,28 @@
+"""
+Authentication schemas module.
+
+Defines Pydantic models for request and response validation in authentication endpoints.
+"""
+
+from pydantic import BaseModel
+
+class UserBase(BaseModel):
+    """Base schema for User data."""
+    username: str
+
+class UserCreate(UserBase):
+    """Schema for user creation (registration)."""
+    password: str
+
+class UserOut(UserBase):
+    """Schema for user response (excluding password)."""
+    id: int
+    role: str
+
+    class Config:
+        from_attributes = True
+
+class Token(BaseModel):
+    """Schema for JWT token response."""
+    access_token: str
+    token_type: str = "bearer"

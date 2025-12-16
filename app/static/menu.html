@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TPV Portfolio - Panel Principal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/shared.css">
+    <link rel="stylesheet" href="css/menu.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar (Optional for Menu, but keeping for consistency or removing if desired) -->
+        <!-- For the main menu, we might not need the sidebar, or we can keep it for quick actions -->
+
+        <main class="main-content">
+            <h2 style="margin-top: 0; margin-bottom: 2rem;">Panel Principal</h2>
+            <div class="menu-grid">
+                <a href="pos.html" class="menu-card">
+                    <div class="menu-icon">🖥️</div>
+                    <div class="menu-title">TPV</div>
+                    <div class="menu-desc">Terminal Punto de Venta</div>
+                </a>
+                <a href="products.html" class="menu-card">
+                    <div class="menu-icon">📦</div>
+                    <div class="menu-title">Productos</div>
+                    <div class="menu-desc">Gestión de inventario</div>
+                </a>
+                <a href="sales.html" class="menu-card">
+                    <div class="menu-icon">📊</div>
+                    <div class="menu-title">Ventas</div>
+                    <div class="menu-desc">Historial de tickets</div>
+                </a>
+                <a href="cash_closing.html" class="menu-card">
+                    <div class="menu-icon">🔒</div>
+                    <div class="menu-title">Cierre de Caja</div>
+                    <div class="menu-desc">Finalizar turno</div>
+                </a>
+                <div class="menu-card" onclick="logout()">
+                    <div class="menu-icon">👤</div>
+                    <div class="menu-title">Cambiar Perfil</div>
+                    <div class="menu-desc">Cerrar sesión actual</div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/menu.js"></script>
+</body>
+
+</html>

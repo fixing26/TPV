@@ -1,0 +1,22 @@
+fastapi==0.110.0
+uvicorn[standard]==0.29.0
+
+# Seguridad y contraseñas
+python-dotenv==1.0.1
+bcrypt==4.1.2
+python-jose[cryptography]==3.3.0
+
+# Base de datos (SQLAlchemy async + SQLite)
+SQLAlchemy==2.0.29
+aiosqlite==0.20.0
+
+# Pydantic (incluye dotenv)
+pydantic==2.6.4
+pydantic-settings==2.2.1
+
+# Para CORS si lo necesitas luego
+starlette==0.37.2
+
+# Adaptadores si luego quieres subir a serverless
+mangum==0.17.0
+asyncpg ==0.30.0

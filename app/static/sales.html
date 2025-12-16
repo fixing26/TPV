@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TPV Portfolio - Ventas</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/shared.css">
+    <link rel="stylesheet" href="css/sales.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="logo">
+                🛒 TPV App
+            </div>
+            <ul class="nav-links">
+                <a href="menu.html" class="nav-item">← Volver al Menú</a>
+                <a href="pos.html" class="nav-item">Terminal TPV</a>
+                <a href="products.html" class="nav-item">Productos</a>
+                <a href="sales.html" class="nav-item active">Ventas</a>
+            </ul>
+            <div class="user-info">
+                <button class="btn btn-secondary" onclick="logout()">Cerrar Sesión</button>
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <h2 style="margin-top: 0; margin-bottom: 2rem;">Historial de Ventas</h2>
+            <div id="sales-list" class="sales-grid">
+                <!-- Sales injected here -->
+            </div>
+        </main>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/sales.js?v=1"></script>
+</body>
+
+</html>

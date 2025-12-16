@@ -1,0 +1,8 @@
+/.env
+/.venv
+/README.md
+/Roadmap.md
+/server.log
+/test_passlib.py
+/test_register.py
+/tpv.db

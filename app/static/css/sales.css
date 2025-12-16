@@ -1,0 +1,31 @@
+/* Sales Styles */
+.sales-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+}
+
+.sale-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 1rem;
+    cursor: default;
+}
+
+.sale-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.sale-details {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.sale-total {
+    text-align: right;
+    font-weight: bold;
+    color: var(--primary-color);
+}

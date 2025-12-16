@@ -1,0 +1,23 @@
+/* Products Styles */
+.card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border-color);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th {
+    text-align: left;
+    border-bottom: 2px solid var(--border-color);
+    padding: 0.5rem;
+}
+
+td {
+    padding: 0.5rem;
+    border-bottom: 1px solid var(--bg-color);
+}
