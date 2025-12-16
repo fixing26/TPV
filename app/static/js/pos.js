@@ -2,9 +2,12 @@
  * POS Logic
  */
 
+
 const state = {
     cart: [],
-    products: []
+    products: [],
+    categories: [],
+    selectedCategoryId: null
 };
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -14,20 +17,60 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function loadPos() {
     try {
-        state.products = await api.getProducts();
+        const [products, categories] = await Promise.all([
+            api.getProducts(),
+            api.getCategories()
+        ]);
+
+        state.products = products;
+
+        // Add "All" category at the beginning
+        state.categories = [{ id: null, name: 'Todos' }, ...categories];
+        state.selectedCategoryId = null;
+
+        renderCategories();
         renderProductsGrid();
     } catch (err) {
         console.error(err);
-        showToast('Error cargando productos', 'error');
+        showToast('Error cargando datos', 'error');
     }
+}
+
+function renderCategories() {
+    const bar = document.getElementById('pos-categories');
+    bar.innerHTML = state.categories.map(c => `
+        <div class="category-pill ${c.id === state.selectedCategoryId ? 'active' : ''}"
+             onclick="selectCategory(${c.id})">
+            ${c.name}
+        </div>
+    `).join('');
+}
+
+function selectCategory(categoryId) {
+    state.selectedCategoryId = categoryId;
+    renderCategories(); // Re-render to update active class
+    renderProductsGrid();
 }
 
 function renderProductsGrid() {
     const grid = document.getElementById('pos-products');
-    grid.innerHTML = state.products.map(p => `
+
+    let filteredProducts = state.products;
+    if (state.selectedCategoryId !== null) {
+        filteredProducts = state.products.filter(p => p.category_id === state.selectedCategoryId);
+    }
+
+    if (filteredProducts.length === 0) {
+        grid.innerHTML = '<div style="color: var(--text-muted); grid-column: 1/-1; text-align: center; margin-top: 2rem;">No hay productos en esta categoría</div>';
+        return;
+    }
+
+    grid.innerHTML = filteredProducts.map(p => `
         <div class="product-card" onclick="addToCart(${p.id})">
+
             <div>
                 <div class="product-name">${p.name}</div>
+                <div class="product-category-name">${p.category ? p.category.name : '-'}</div>
             </div>
             <div class="product-price">${p.price.toFixed(2)}€</div>
         </div>

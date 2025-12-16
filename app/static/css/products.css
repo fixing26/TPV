@@ -21,3 +21,29 @@ td {
     padding: 0.5rem;
     border-bottom: 1px solid var(--bg-color);
 }
+
+/* Categories List in Dashboard */
+.categories-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.category-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background: var(--bg-color);
+    border-radius: var(--radius);
+    border: 1px solid var(--border-color);
+}
+
+.category-item-name {
+    font-weight: 500;
+}
+
+.category-actions {
+    display: flex;
+    gap: 0.5rem;
+}

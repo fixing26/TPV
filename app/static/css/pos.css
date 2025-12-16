@@ -50,7 +50,8 @@
     font-weight: 700;
 }
 
-.product-stock {
+
+.product-category-name {
     font-size: 0.75rem;
     color: var(--text-muted);
 }
@@ -132,4 +133,36 @@
     font-size: 1.25rem;
     font-weight: 700;
     margin-bottom: 1rem;
+}
+
+/* Categories */
+.categories-bar {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+    white-space: nowrap;
+}
+
+.category-pill {
+    background: var(--surface);
+    border: 1px solid var(--border-color);
+    padding: 0.5rem 1rem;
+    border-radius: 9999px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+    user-select: none;
+}
+
+.category-pill:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.category-pill.active {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
 }

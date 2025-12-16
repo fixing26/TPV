@@ -7,11 +7,13 @@ Handles CRUD operations for products.
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy.orm import selectinload
 
-from .models import Product
-from .schemas import ProductCreate, ProductUpdate, ProductOut
+from .models import Product, Category
+from .schemas import ProductCreate, ProductUpdate, ProductOut, CategoryCreate, CategoryOut, CategoryUpdate
 from ..db import get_session
 
 router = APIRouter()
@@ -29,8 +31,9 @@ async def list_products(db: AsyncSession = Depends(get_session),skip: int = 0,li
 
     Returns:
         List[ProductOut]: List of products.
+
     """
-    query = select(Product).offset(skip).limit(limit)
+    query = select(Product).options(selectinload(Product.category)).offset(skip).limit(limit)
     result = await db.execute(query)
     products = result.scalars().all()
     return products
@@ -48,10 +51,11 @@ async def get_product(product_id: int,db: AsyncSession = Depends(get_session),):
     Returns:
         ProductOut: The requested product.
 
+
     Raises:
         HTTPException: If product is not found.
     """
-    result = await db.execute(select(Product).where(Product.id == product_id))
+    result = await db.execute(select(Product).options(selectinload(Product.category)).where(Product.id == product_id))
     product = result.scalar_one_or_none()
     if not product:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
@@ -70,10 +74,13 @@ async def create_product(product_in: ProductCreate,db: AsyncSession = Depends(ge
     Returns:
         ProductOut: The created product.
     """
+
     product = Product(**product_in.model_dump())
     db.add(product)
     await db.commit()
-    await db.refresh(product)
+    # Reload with relation for Pydantic response
+    result = await db.execute(select(Product).options(selectinload(Product.category)).where(Product.id == product.id))
+    product = result.scalar_one()
     return product
 
 
@@ -102,10 +109,54 @@ async def update_product(product_id: int,product_in: ProductUpdate,db: AsyncSess
     for field, value in data.items():
         setattr(product, field, value)
 
+
     db.add(product)
     await db.commit()
-    await db.refresh(product)
+    # Reload with relation
+    result = await db.execute(select(Product).options(selectinload(Product.category)).where(Product.id == product.id))
+    product = result.scalar_one()
     return product
+
+
+
+@router.post("/categories/", response_model=CategoryOut, status_code=status.HTTP_201_CREATED)
+async def create_category(category_in: CategoryCreate, db: AsyncSession = Depends(get_session)):
+    """
+    Create a new category.
+    """
+    category = Category(**category_in.model_dump())
+    db.add(category)
+    await db.commit()
+    await db.refresh(category)
+    return category
+
+
+
+@router.get("/categories/", response_model=List[CategoryOut])
+async def list_categories(db: AsyncSession = Depends(get_session), skip: int = 0, limit: int = 100):
+    """
+    List categories.
+    """
+    result = await db.execute(select(Category).offset(skip).limit(limit))
+    categories = result.scalars().all()
+    return categories
+
+
+@router.put("/categories/{category_id}", response_model=CategoryOut)
+async def update_category(category_id: int, category_in: CategoryUpdate, db: AsyncSession = Depends(get_session)):
+    """
+    Update a category.
+    """
+    result = await db.execute(select(Category).where(Category.id == category_id))
+    category = result.scalar_one_or_none()
+    if not category:
+        raise HTTPException(status_code=404, detail="Categoría no encontrada")
+    
+    category.name = category_in.name
+    db.add(category)
+    await db.commit()
+    await db.refresh(category)
+    return category
 
 
 @router.delete("/{product_id}", status_code=status.HTTP_204_NO_CONTENT)

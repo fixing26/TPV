@@ -63,6 +63,7 @@ class ApiClient {
         });
     }
 
+
     // --- Products Endpoints ---
     async getProducts() {
         return this.request('/products/');
@@ -72,6 +73,25 @@ class ApiClient {
         return this.request('/products/', {
             method: 'POST',
             body: JSON.stringify(product),
+        });
+    }
+
+    async getCategories() {
+        return this.request('/products/categories/');
+    }
+
+
+    async createCategory(category) {
+        return this.request('/products/categories/', {
+            method: 'POST',
+            body: JSON.stringify(category),
+        });
+    }
+
+    async updateCategory(id, category) {
+        return this.request(`/products/categories/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(category),
         });
     }
 

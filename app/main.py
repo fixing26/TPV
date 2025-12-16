@@ -18,7 +18,7 @@ from app.db import engine, Base
 
 # Importa todos los modelos para registrarlos
 from app.auth.models import User
-from app.products.models import Product
+from app.products.models import Product, Category
 from app.sales.models import Sale, SaleLine
 from app.cash_closing.models import CashClosing
 
