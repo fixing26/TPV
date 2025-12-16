@@ -5,6 +5,7 @@ uvicorn[standard]==0.29.0
 python-dotenv==1.0.1
 bcrypt==4.1.2
 python-jose[cryptography]==3.3.0
+passlib==1.7.4
 
 # Base de datos (SQLAlchemy async + SQLite)
 SQLAlchemy==2.0.29

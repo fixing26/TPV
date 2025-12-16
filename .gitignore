@@ -6,3 +6,4 @@
 /test_passlib.py
 /test_register.py
 /tpv.db
+/app/__pycache__
