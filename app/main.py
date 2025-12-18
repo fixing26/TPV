@@ -21,6 +21,7 @@ from app.auth.models import User
 from app.products.models import Product, Category
 from app.sales.models import Sale, SaleLine
 from app.cash_closing.models import CashClosing
+from app.tables.models import Table
 
 
 @asynccontextmanager
@@ -60,11 +61,13 @@ from app.auth.routes import router as auth_router
 from app.products.routes import router as products_router
 from app.sales.routes import router as sales_router
 from app.cash_closing.routes import router as cash_closing_router
+from app.tables.routes import router as tables_router
 
 app.include_router(auth_router, prefix="/auth", tags=["Auth"])
 app.include_router(products_router, prefix="/products", tags=["Products"])
 app.include_router(sales_router, prefix="/sales", tags=["Sales"])
 app.include_router(cash_closing_router, prefix="/cash-closing", tags=["Cash Closing"])
+app.include_router(tables_router, prefix="/tables", tags=["Tables"])
 
 # Servir archivos estáticos (Frontend)
 # Aseguramos que el directorio exista, aunque sea vacío por ahora

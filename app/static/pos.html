@@ -6,8 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TPV Portfolio - Terminal</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/shared.css?v=1.1">
-    <link rel="stylesheet" href="css/pos.css?v=1.1">
+    <link rel="stylesheet" href="css/shared.css?v=1.3">
+    <link rel="stylesheet" href="css/pos.css?v=1.3">
 </head>
 
 <body>
@@ -18,8 +18,9 @@
                 🛒 TPV App
             </div>
             <ul class="nav-links">
-                <a href="menu.html" class="nav-item">← Volver al Menú</a>
-                <a href="pos.html" class="nav-item active">Terminal TPV</a>
+                <a href="menu.html" class="nav-item">← Menú</a>
+                <a href="active_orders.html" class="nav-item">Mesas</a>
+                <a href="pos.html" class="nav-item active">Terminal</a>
                 <a href="products.html" class="nav-item">Productos</a>
                 <a href="sales.html" class="nav-item">Ventas</a>
             </ul>
@@ -43,7 +44,10 @@
                     </div>
                 </div>
                 <div class="cart-panel">
-                    <div class="cart-header">Ticket Actual</div>
+                    <div class="cart-header">
+                        Ticket Actual
+                        <div id="sale-info" style="font-size: 0.8rem; font-weight: normal; margin-top: 0.2rem;"></div>
+                    </div>
                     <div id="cart-items" class="cart-items">
                         <!-- Cart items injected here -->
                         <div class="text-center" style="color: var(--text-muted); margin-top: 2rem;">
@@ -62,16 +66,19 @@
                             <span>Total</span>
                             <span id="cart-total">0.00€</span>
                         </div>
-                        <button class="btn btn-primary" onclick="checkout()">COBRAR</button>
+                        <button class="btn btn-secondary" onclick="saveOrder()"
+                            style="margin-bottom: 0.5rem; width: 100%;">GUARDAR EN MESA</button>
+                        <button class="btn btn-primary" onclick="checkout()" style="width: 100%;">COBRAR Y
+                            CERRAR</button>
                     </div>
                 </div>
             </div>
         </main>
     </div>
 
-    <script src="js/api.js?v=1.1"></script>
-    <script src="js/utils.js?v=1.1"></script>
-    <script src="js/pos.js?v=1.1"></script>
+    <script src="js/api.js?v=1.5"></script>
+    <script src="js/utils.js?v=1.5"></script>
+    <script src="js/pos.js?v=1.5"></script>
 </body>
 
 </html>

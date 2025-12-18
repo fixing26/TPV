@@ -19,6 +19,7 @@ env/
 *.sqlite3
 tpv.db
 
+
 # Logs
 *.log
 logs/
@@ -36,3 +37,13 @@ test_*.py
 # OS generated files
 .DS_Store
 Thumbs.db
+
+# Local Debug & Verification Scripts
+fix_db_schema.py
+verify_tables.py
+debug_api.py
+debug_api_v2.py
+inspect_db.py
+test_curl.ps1
+fix_db_postgres.py
+verify_save_order.py

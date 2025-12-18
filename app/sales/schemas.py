@@ -15,9 +15,23 @@ class SaleLineCreate(BaseModel):
 
 
 class SaleCreate(BaseModel):
-    """Schema for creating a new sale."""
+    """Schema for creating a new sale (immediate close)."""
     payment_method: str = "cash"
     lines: List[SaleLineCreate]
+
+
+class SaleOpen(BaseModel):
+    """Schema for opening a new account/table."""
+    table_id: int | None = None
+    name: str | None = None
+
+
+class SaleUpdate(BaseModel):
+    """Schema for adding items or updating a sale."""
+    lines: List[SaleLineCreate] = []
+    payment_method: str | None = None
+    status: str | None = None
+
 
 
 # --------- OUTPUT (lo que responde la API) --------- #
@@ -39,7 +53,10 @@ class SaleOut(BaseModel):
     id: int
     total: float
     payment_method: str
+    status: str
     created_at: float
+    table_id: int | None = None
+    name: str | None = None
     lines: List[SaleLineOut]
 
     class Config:

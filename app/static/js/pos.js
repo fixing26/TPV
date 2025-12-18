@@ -7,11 +7,19 @@ const state = {
     cart: [],
     products: [],
     categories: [],
-    selectedCategoryId: null
+    selectedCategoryId: null,
+    saleId: null, // If null, it's a direct immediate sale
+    currentSale: null
 };
 
 document.addEventListener('DOMContentLoaded', () => {
     checkAuth(true);
+
+    // Check URL params
+    const urlParams = new URLSearchParams(window.location.search);
+    const saleId = urlParams.get('sale_id');
+    if (saleId) state.saleId = parseInt(saleId);
+
     loadPos();
 });
 
@@ -23,17 +31,33 @@ async function loadPos() {
         ]);
 
         state.products = products;
-
-        // Add "All" category at the beginning
         state.categories = [{ id: null, name: 'Todos' }, ...categories];
         state.selectedCategoryId = null;
 
         renderCategories();
         renderProductsGrid();
+
+        // Load existing sale if in edit mode
+        if (state.saleId) {
+            const sale = await api.getSale(state.saleId);
+            state.currentSale = sale;
+            // Load existing lines? 
+            // Design decision: Do we load existing lines into the cart as editable? 
+            // Or only show them as "Already ordered" and cart is "New items"?
+            // Simple approach: Cart starts empty (new items), display total of existing sale somewhere.
+            // OR: We don't display existing items in this cart array, but we show a summary.
+            updateSaleInfo(sale);
+        }
+
     } catch (err) {
         console.error(err);
         showToast('Error cargando datos', 'error');
     }
+}
+
+function updateSaleInfo(sale) {
+    const totalEl = document.getElementById('cart-total-existing');
+    if (totalEl) totalEl.textContent = `Previo: ${sale.total.toFixed(2)}€`;
 }
 
 function renderCategories() {
@@ -127,26 +151,85 @@ function renderCart() {
     }
 
     totalEl.textContent = `${total.toFixed(2)}€`;
+
+    // If working on an open table, we might show grand total (existing + new)
+    if (state.currentSale) {
+        // logic to show grand total could go here
+    }
+}
+
+async function saveOrder() {
+    if (state.cart.length === 0) {
+        showToast('El carrito está vacío', 'warning');
+        return;
+    }
+    if (!state.saleId) {
+        showToast('Esta función es solo para mesas abiertas', 'warning');
+        return;
+    }
+
+    const lines = state.cart.map(item => ({
+        product_id: item.product.id,
+        quantity: item.quantity
+    }));
+
+    try {
+        await api.addLinesToSale(state.saleId, lines);
+        showToast('Pedido guardado en mesa');
+        state.cart = [];
+        // Reload sale to update totals
+        const sale = await api.getSale(state.saleId);
+        state.currentSale = sale;
+        renderCart();
+        // Redirect back to tables map?
+        if (confirm("Pedido guardado. ¿Volver a mesas?")) {
+            window.location.href = 'active_orders.html';
+        }
+    } catch (err) {
+        showToast(err.message, 'error');
+    }
 }
 
 async function checkout() {
-    if (state.cart.length === 0) return;
+    // If empty cart and no open sale, ignore
+    if (state.cart.length === 0 && !state.saleId) return;
+
+    // If active sale:
+    // 1. If cart has items, add them first (auto-save) or just confirm?
+    // Let's assume we must add items first if any.
 
     const paymentMethod = document.getElementById('payment-method').value;
 
-    const saleData = {
-        payment_method: paymentMethod,
-        lines: state.cart.map(item => ({
-            product_id: item.product.id,
-            quantity: item.quantity
-        }))
-    };
-
     try {
-        await api.createSale(saleData);
-        showToast('Venta realizada con éxito');
-        state.cart = [];
-        renderCart();
+        if (state.saleId) {
+            // Add pending items if any
+            if (state.cart.length > 0) {
+                const lines = state.cart.map(item => ({
+                    product_id: item.product.id,
+                    quantity: item.quantity
+                }));
+                await api.addLinesToSale(state.saleId, lines);
+                state.cart = [];
+            }
+            // Close sale
+            await api.closeSale(state.saleId, paymentMethod);
+            showToast('Cuenta cerrada y cobrada');
+            setTimeout(() => window.location.href = 'active_orders.html', 1000);
+
+        } else {
+            // Direct sale (Legacy/Quick mode)
+            const saleData = {
+                payment_method: paymentMethod,
+                lines: state.cart.map(item => ({
+                    product_id: item.product.id,
+                    quantity: item.quantity
+                }))
+            };
+            await api.createSale(saleData);
+            showToast('Venta realizada con éxito');
+            state.cart = [];
+            renderCart();
+        }
     } catch (err) {
         showToast(err.message, 'error');
     }

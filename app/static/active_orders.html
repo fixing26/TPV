@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TPV - Mesas y Pedidos Activos</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/shared.css?v=1.5">
+    <link rel="stylesheet" href="css/active_orders.css?v=1.5">
+</head>
+
+<body>
+    <div class="app-container">
+        <nav class="sidebar">
+            <div class="logo">🛒 TPV App</div>
+            <ul class="nav-links">
+                <a href="menu.html" class="nav-item">← Volver al Menú</a>
+                <a href="active_orders.html" class="nav-item active">Mesas Activas</a>
+                <a href="tables.html" class="nav-item">Gestión Mesas</a>
+                <a href="products.html" class="nav-item">Productos</a>
+            </ul>
+        </nav>
+
+        <main class="main-content">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h2 style="margin: 0;">Mesas y Pedidos</h2>
+                <button class="btn btn-primary" onclick="openCustomOrder()">+ Pedido Barra/Llevar</button>
+            </div>
+
+            <h3 class="section-title">Mesas</h3>
+            <div id="tables-grid" class="tables-grid">
+                <!-- Tables injected here -->
+            </div>
+
+            <h3 class="section-title">Pedidos Barra / Otros</h3>
+            <div id="other-orders-grid" class="tables-grid">
+                <!-- Non-table orders here -->
+            </div>
+        </main>
+    </div>
+
+    <script src="js/api.js?v=1.5"></script>
+    <script src="js/utils.js?v=1.5"></script>
+    <script src="js/active_orders.js?v=1.5"></script>
+</body>
+
+</html>

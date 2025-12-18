@@ -6,8 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TPV Portfolio - Panel Principal</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/shared.css?v=1.1">
-    <link rel="stylesheet" href="css/menu.css?v=1.1">
+    <link rel="stylesheet" href="css/shared.css?v=1.5">
+    <link rel="stylesheet" href="css/menu.css?v=1.5">
 </head>
 
 <body>
@@ -18,10 +18,15 @@
         <main class="main-content">
             <h2 style="margin-top: 0; margin-bottom: 2rem;">Panel Principal</h2>
             <div class="menu-grid">
-                <a href="pos.html" class="menu-card">
-                    <div class="menu-icon">🖥️</div>
-                    <div class="menu-title">TPV</div>
-                    <div class="menu-desc">Terminal Punto de Venta</div>
+                <a href="active_orders.html" class="menu-card">
+                    <div class="menu-icon">🍽️</div>
+                    <div class="menu-title">Mesas</div>
+                    <div class="menu-desc">Ver mapa de mesas</div>
+                </a>
+                <a href="pos.html?mode=direct" class="menu-card">
+                    <div class="menu-icon">⚡</div>
+                    <div class="menu-title">Venta Rápida</div>
+                    <div class="menu-desc">Sin mesa asignada</div>
                 </a>
                 <a href="products.html" class="menu-card">
                     <div class="menu-icon">📦</div>
@@ -32,6 +37,11 @@
                     <div class="menu-icon">📊</div>
                     <div class="menu-title">Ventas</div>
                     <div class="menu-desc">Historial de tickets</div>
+                </a>
+                <a href="tables.html" class="menu-card">
+                    <div class="menu-icon">⚙️</div>
+                    <div class="menu-title">Gestión Mesas</div>
+                    <div class="menu-desc">Configurar mesas</div>
                 </a>
                 <a href="cash_closing.html" class="menu-card">
                     <div class="menu-icon">🔒</div>
@@ -47,7 +57,7 @@
         </main>
     </div>
 
-    <script src="js/api.js?v=1.1"></script>
+    <script src="js/api.js?v=1.5"></script>
     <script src="js/utils.js?v=1.1"></script>
     <script src="js/menu.js?v=1.1"></script>
 </body>

@@ -11,11 +11,12 @@ from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 
 from .models import Sale, SaleLine
-from .schemas import SaleCreate, SaleOut
+from .schemas import SaleCreate, SaleOut, SaleOpen, SaleUpdate, SaleLineCreate
 from ..products.models import Product
 from ..auth.dependencies import get_current_user
 from ..auth.models import User
 from ..db import get_session
+from ..tables.models import Table
 
 router = APIRouter()
 
@@ -27,50 +28,33 @@ async def create_sale(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Create a new sale (ticket).
-
-    Calculates the total based on product prices and updates stock.
-
-    Args:
-        sale_in (SaleCreate): Sale data including lines.
-        db (AsyncSession): Database session.
-        current_user (User): Authenticated user.
-
-    Returns:
-        SaleOut: The created sale with full details.
-
-    Raises:
-        HTTPException: If a product is not found or stock is insufficient.
+    Create a new sale (IMMEDIATE CLOSE).
+    Legacy endpoint for direct sales without table/account management.
     """
     if not sale_in.lines:
         raise HTTPException(status_code=400, detail="La venta debe tener al menos una línea.")
 
-    # Creamos la venta con total 0 y luego calculamos
+    # Create CLOSED sale
     sale = Sale(
         total=0.0,
         payment_method=sale_in.payment_method,
+        status="CLOSED",
         user_id=current_user.id
     )
     db.add(sale)
-    await db.flush()  # para tener sale.id antes del commit
+    await db.flush()
 
     total = 0.0
-
     for line_in in sale_in.lines:
-        # Buscar producto
-        result = await db.execute(
-            select(Product).where(Product.id == line_in.product_id)
-        )
+        # Code reuse logic could be improved here, but keeping inline for now
+        result = await db.execute(select(Product).where(Product.id == line_in.product_id))
         product = result.scalar_one_or_none()
         if not product:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Producto {line_in.product_id} no encontrado",
-            )
-
+            raise HTTPException(status_code=404, detail=f"Producto {line_in.product_id} no encontrado")
+        
         price_unit = product.price
         line_total = price_unit * line_in.quantity
-
+        
         sale_line = SaleLine(
             sale_id=sale.id,
             product_id=product.id,
@@ -79,24 +63,146 @@ async def create_sale(
             line_total=line_total,
         )
         db.add(sale_line)
-
-        # Actualizar total de la venta
         total += line_total
-
+    
     sale.total = total
     db.add(sale)
-
     await db.commit()
+    
+    result = await db.execute(select(Sale).options(selectinload(Sale.lines)).where(Sale.id == sale.id))
+    return result.scalar_one()
 
-    # Volvemos a consultar la venta con sus líneas para devolverla completa
+
+@router.post("/open", response_model=SaleOut, status_code=status.HTTP_201_CREATED)
+async def open_account(
+    account_in: SaleOpen,
+    db: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Open a new account (running tab), optionally assigned to a table.
+    """
+    # Check if table exists and is free if provided
+    if account_in.table_id:
+        # Check if table exists
+        t_res = await db.execute(select(Table).where(Table.id == account_in.table_id))
+        table = t_res.scalar_one_or_none()
+        if not table:
+            raise HTTPException(status_code=404, detail="Mesa no encontrada")
+        
+        # Check if table already has an OPEN sale
+        open_res = await db.execute(
+            select(Sale)
+            .where(Sale.table_id == account_in.table_id)
+            .where(Sale.status == "OPEN")
+        )
+        if open_res.scalar_one_or_none():
+             raise HTTPException(status_code=400, detail="La mesa ya tiene una cuenta abierta")
+
+    sale = Sale(
+        total=0.0,
+        status="OPEN",
+        table_id=account_in.table_id,
+        name=account_in.name,
+        user_id=current_user.id
+    )
+    db.add(sale)
+    await db.commit()
+    await db.refresh(sale)
+    # Ensure lines is empty list for schema
+    result = await db.execute(select(Sale).options(selectinload(Sale.lines)).where(Sale.id == sale.id))
+    return result.scalar_one()
+
+
+@router.get("/active", response_model=List[SaleOut])
+async def list_active_accounts(
+    db: AsyncSession = Depends(get_session)
+):
+    """
+    List all OPEN accounts/tables.
+    """
     result = await db.execute(
         select(Sale)
         .options(selectinload(Sale.lines))
-        .where(Sale.id == sale.id)
+        .where(Sale.status == "OPEN")
+        .order_by(Sale.created_at.desc())
     )
-    sale_db = result.scalar_one()
+    return result.scalars().all()
 
-    return sale_db
+
+@router.post("/{sale_id}/lines", response_model=SaleOut)
+async def add_lines_to_account(
+    sale_id: int,
+    lines_in: List[SaleLineCreate],
+    db: AsyncSession = Depends(get_session)
+):
+    """
+    Add items to an existing OPEN account.
+    """
+    result = await db.execute(select(Sale).options(selectinload(Sale.lines)).where(Sale.id == sale_id))
+    sale = result.scalar_one_or_none()
+    
+    if not sale:
+        raise HTTPException(status_code=404, detail="Cuenta no encontrada")
+    
+    if sale.status != "OPEN":
+        raise HTTPException(status_code=400, detail="La cuenta no está abierta")
+
+    total_added = 0.0
+    for line_in in lines_in:
+        # Check product
+        p_res = await db.execute(select(Product).where(Product.id == line_in.product_id))
+        product = p_res.scalar_one_or_none()
+        if not product:
+             raise HTTPException(status_code=404, detail=f"Producto {line_in.product_id} no encontrado")
+        
+        price_unit = product.price
+        line_total = price_unit * line_in.quantity
+        
+        sale_line = SaleLine(
+            sale_id=sale.id,
+            product_id=product.id,
+            quantity=line_in.quantity,
+            price_unit=price_unit,
+            line_total=line_total,
+        )
+        db.add(sale_line)
+        total_added += line_total
+    
+    sale.total += total_added
+    db.add(sale)
+    await db.commit()
+    
+    # Refresh return
+    result = await db.execute(select(Sale).options(selectinload(Sale.lines)).where(Sale.id == sale.id))
+    return result.scalar_one()
+
+
+@router.post("/{sale_id}/close", response_model=SaleOut)
+async def close_account(
+    sale_id: int,
+    payment_method: str = "cash",
+    db: AsyncSession = Depends(get_session)
+):
+    """
+    Close (checkout) an account.
+    """
+    result = await db.execute(select(Sale).options(selectinload(Sale.lines)).where(Sale.id == sale_id))
+    sale = result.scalar_one_or_none()
+    
+    if not sale:
+        raise HTTPException(status_code=404, detail="Cuenta no encontrada")
+    
+    if sale.status != "OPEN":
+        raise HTTPException(status_code=400, detail="La cuenta ya está cerrada o cancelada")
+    
+    sale.status = "CLOSED"
+    sale.payment_method = payment_method
+    db.add(sale)
+    await db.commit()
+    
+    return sale
+
 
 
 @router.get("/", response_model=List[SaleOut])

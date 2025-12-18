@@ -41,8 +41,15 @@ class ApiClient {
         }
 
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.detail || 'API Error');
+            let errorMessage = 'API Error';
+            try {
+                const error = await response.json();
+                errorMessage = error.detail || errorMessage;
+            } catch (e) {
+                // If response is not JSON (e.g. 500 HTML), use status text
+                errorMessage = `${response.status} ${response.statusText}`;
+            }
+            throw new Error(errorMessage);
         }
 
         return response.json();
@@ -117,6 +124,59 @@ class ApiClient {
 
     async getSales() {
         return this.request('/sales/');
+    }
+
+    async getSale(id) {
+        return this.request(`/sales/${id}`);
+    }
+
+    async getActiveSales() {
+        return this.request('/sales/active');
+    }
+
+    async openSale(data) {
+        return this.request('/sales/open', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    }
+
+    async addLinesToSale(saleId, lines) {
+        return this.request(`/sales/${saleId}/lines`, {
+            method: 'POST',
+            body: JSON.stringify(lines)
+        });
+    }
+
+    async closeSale(saleId, paymentMethod) {
+        return this.request(`/sales/${saleId}/close?payment_method=${paymentMethod}`, {
+            method: 'POST'
+        });
+    }
+
+    // --- Tables Endpoints ---
+    async getTables() {
+        return this.request('/tables/');
+    }
+
+    async createTable(data) {
+        return this.request('/tables/', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    }
+
+    async updateTable(id, data) {
+        return this.request(`/tables/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+        });
+    }
+
+    async deleteTable(id) {
+        return this.request(`/tables/${id}`, {
+            method: 'DELETE'
+        });
     }
 }
 

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TPV - Gestión de Mesas</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/shared.css?v=1.5">
+    <style>
+        .tables-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .table-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .table-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .table-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .table-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .add-table-card {
+            border: 2px dashed #ccc;
+            background: transparent;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+        }
+
+        .add-table-card:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+        <nav class="sidebar">
+            <div class="logo">🛒 TPV App</div>
+            <ul class="nav-links">
+                <a href="menu.html" class="nav-item">← Volver al Menú</a>
+                <a href="active_orders.html" class="nav-item">Mesas Activas</a>
+                <a href="tables.html" class="nav-item active">Gestión Mesas</a>
+                <a href="products.html" class="nav-item">Productos</a>
+            </ul>
+        </nav>
+
+        <main class="main-content">
+            <h2 style="margin-top: 0;">Gestión de Mesas</h2>
+
+            <div id="tables-list" class="tables-grid">
+                <!-- Injected via JS -->
+            </div>
+        </main>
+        <div id="table-modal" class="modal-overlay">
+            <div class="modal">
+                <h3 id="modal-title">Nueva Mesa</h3>
+                <div class="form-group">
+                    <label>Nombre/Número</label>
+                    <input type="text" id="table-name" class="form-control" placeholder="Ej: Mesa 1">
+                </div>
+                <div class="form-group">
+                    <label>Descripción (Opcional)</label>
+                    <input type="text" id="table-desc" class="form-control" placeholder="Ej: Terraza, Ventana...">
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+                    <button id="btn-delete" class="btn btn-danger" onclick="deleteTable()"
+                        style="display:none; margin-right:auto;">Eliminar</button>
+                    <button class="btn btn-primary" onclick="saveTable()">Guardar</button>
+                </div>
+            </div>
+        </div>
+
+        <script src="js/api.js?v=1.5"></script>
+        <script src="js/utils.js?v=1.5"></script>
+        <script src="js/tables.js?v=1.5"></script>
+</body>
+
+</html>
