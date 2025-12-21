@@ -148,6 +148,13 @@ class ApiClient {
         });
     }
 
+    async updateSale(saleId, saleData) {
+        return this.request(`/sales/${saleId}`, {
+            method: 'PUT',
+            body: JSON.stringify(saleData)
+        });
+    }
+
     async closeSale(saleId, paymentMethod) {
         return this.request(`/sales/${saleId}/close?payment_method=${paymentMethod}`, {
             method: 'POST'

@@ -32,7 +32,7 @@ function renderTables(tables, activeSales) {
         // If free, click opens new sale dialog/action for this table
         const clickAction = isBusy
             ? `window.location.href='pos.html?sale_id=${sale.id}'`
-            : `openTable(${table.id}, '${table.name}')`;
+            : `showToast('Inicie venta desde el Terminal', 'info')`;
 
         return `
             <div class="table-card ${statusClass}" onclick="${clickAction}">

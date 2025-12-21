@@ -7,6 +7,8 @@ const state = {
     cart: [],
     products: [],
     categories: [],
+    tables: [],
+    activeSales: [],
     selectedCategoryId: null,
     saleId: null, // If null, it's a direct immediate sale
     currentSale: null
@@ -25,27 +27,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function loadPos() {
     try {
-        const [products, categories] = await Promise.all([
+        const [products, categories, tables, activeSales] = await Promise.all([
             api.getProducts(),
-            api.getCategories()
+            api.getCategories(),
+            api.getTables(),
+            api.getActiveSales()
         ]);
 
         state.products = products;
         state.categories = [{ id: null, name: 'Todos' }, ...categories];
+        state.tables = tables;
+        state.activeSales = activeSales;
         state.selectedCategoryId = null;
 
         renderCategories();
         renderProductsGrid();
+        renderOpenTablesSideList();
 
         // Load existing sale if in edit mode
         if (state.saleId) {
             const sale = await api.getSale(state.saleId);
             state.currentSale = sale;
-            // Load existing lines? 
-            // Design decision: Do we load existing lines into the cart as editable? 
-            // Or only show them as "Already ordered" and cart is "New items"?
-            // Simple approach: Cart starts empty (new items), display total of existing sale somewhere.
-            // OR: We don't display existing items in this cart array, but we show a summary.
+
+            // Populate cart with existing lines for full editing
+            state.cart = sale.lines.map(line => {
+                const product = state.products.find(p => p.id === line.product_id);
+                // If product not found (e.g. deleted), we might have issues. 
+                // For now assuming active products.
+                return {
+                    product: product || { id: line.product_id, name: 'Producto Desconocido', price: line.price_unit },
+                    quantity: line.quantity
+                };
+            });
+
+            renderCart();
             updateSaleInfo(sale);
         }
 
@@ -56,8 +71,20 @@ async function loadPos() {
 }
 
 function updateSaleInfo(sale) {
-    const totalEl = document.getElementById('cart-total-existing');
-    if (totalEl) totalEl.textContent = `Previo: ${sale.total.toFixed(2)}€`;
+    const infoEl = document.getElementById('sale-info');
+    if (infoEl) {
+        let tableName = 'Sin Mesa';
+        if (sale.table_id) {
+            const table = state.tables.find(t => t.id === sale.table_id);
+            if (table) tableName = table.name;
+            else tableName = `Mesa #${sale.table_id}`;
+        }
+
+        infoEl.innerHTML = `
+            <div>Mesa: <b>${tableName}</b></div>
+            <div>Ticket: #${sale.id} - Previo: <b>${sale.total.toFixed(2)}€</b></div>
+        `;
+    }
 }
 
 function renderCategories() {
@@ -163,30 +190,159 @@ async function saveOrder() {
         showToast('El carrito está vacío', 'warning');
         return;
     }
-    if (!state.saleId) {
-        showToast('Esta función es solo para mesas abiertas', 'warning');
-        return;
-    }
 
+    if (state.saleId) {
+        // Active sale exists, add to it
+        await addToActiveSale(state.saleId);
+    } else {
+        // No active sale, prompt for table
+        openTableModal();
+    }
+}
+
+async function addToActiveSale(saleId, redirect = true) {
+    // Logic changed: Now we REPLACE the sale content with current cart to support edits/removals
     const lines = state.cart.map(item => ({
         product_id: item.product.id,
         quantity: item.quantity
     }));
 
+    // Schema expects payment_method? strict check? Schema says optional.
+    const saleData = {
+        lines: lines
+    };
+
     try {
-        await api.addLinesToSale(state.saleId, lines);
-        showToast('Pedido guardado en mesa');
-        state.cart = [];
-        // Reload sale to update totals
-        const sale = await api.getSale(state.saleId);
-        state.currentSale = sale;
-        renderCart();
-        // Redirect back to tables map?
-        if (confirm("Pedido guardado. ¿Volver a mesas?")) {
-            window.location.href = 'active_orders.html';
+        await api.updateSale(saleId, saleData);
+        showToast('Pedido actualizado');
+        // state.cart = []; // Do NOT clear cart if we stay, but if we redirect it doesn't matter.
+        // If we stay, active editing implies cart should remain?
+        // Actually, if we are in "Edit Mode", the cart IS the ticket.
+        // So clearing it means clearing the ticket for the user visually unless we re-fetch.
+
+        if (redirect) {
+            if (confirm("Pedido guardado. ¿Volver a mesas?")) {
+                window.location.href = 'active_orders.html';
+            } else {
+                // Reload to confirm sync
+                const sale = await api.getSale(saleId);
+                state.currentSale = sale;
+                // Ensure cart matches returned state (in case of pricing changes etc)
+                // But simply re-rendering what we have is faster.
+                updateSaleInfo(sale);
+            }
         }
     } catch (err) {
         showToast(err.message, 'error');
+    }
+}
+
+// Table Selection Logic
+let availableTables = [];
+let activeSalesForSelection = [];
+
+async function openTableModal() {
+    const modal = document.getElementById('table-selection-modal');
+    const grid = document.getElementById('table-selection-grid');
+    grid.innerHTML = '<div class="text-center">Cargando mesas...</div>';
+    modal.classList.add('active'); // Assuming shared.css has .modal-overlay.active
+
+    try {
+        const [tables, activeSales] = await Promise.all([
+            api.getTables(),
+            api.getActiveSales()
+        ]);
+        availableTables = tables;
+        activeSalesForSelection = activeSales;
+        renderTableSelection();
+    } catch (err) {
+        grid.innerHTML = `<div class="text-center error">Error al cargar mesas: ${err.message}</div>`;
+    }
+}
+
+function closeTableModal() {
+    document.getElementById('table-selection-modal').classList.remove('active');
+}
+
+function renderTableSelection() {
+    const grid = document.getElementById('table-selection-grid');
+    grid.innerHTML = availableTables.map(table => {
+        const sale = activeSalesForSelection.find(s => s.table_id === table.id);
+        const isBusy = !!sale;
+        const total = sale ? sale.total.toFixed(2) + '€' : 'Libre';
+        const statusClass = isBusy ? 'status-busy' : 'status-free';
+
+        return `
+            <div class="table-card ${statusClass}" 
+                 onclick="selectTableForSave(${table.id}, ${isBusy ? (sale ? sale.id : 'null') : 'null'})">
+                <div class="table-icon">🪑</div>
+                <div class="table-name">${table.name}</div>
+                <div class="table-info">${isBusy ? 'Ocupada' : 'Disponible'}</div>
+                ${isBusy ? `<div class="table-total">${total}</div>` : ''}
+            </div>
+        `;
+    }).join('');
+
+    // Grid styling is now handled by active_orders.css included in pos.html
+    // but we can ensure the container has the class
+    grid.className = 'tables-grid';
+    grid.style.display = 'grid'; // Ensure grid display if css fails or overrides
+    // Remove manual style injections that conflict with css class
+    grid.style.gridTemplateColumns = '';
+    grid.style.gap = '';
+}
+
+function renderOpenTablesSideList() {
+    const container = document.getElementById('open-tables-list');
+    if (!container) return; // Guard clause
+
+    // Filter active sales that are assigned to a table
+    const tableSales = state.activeSales.filter(s => s.table_id);
+
+    if (tableSales.length === 0) {
+        container.innerHTML = '<div style="color: var(--text-muted); font-size: 0.9rem; font-style: italic;">No hay mesas abiertas</div>';
+        return;
+    }
+
+    container.innerHTML = tableSales.map(sale => {
+        const table = state.tables.find(t => t.id === sale.table_id);
+        const tableName = table ? table.name : `Mesa #${sale.table_id}`;
+
+        return `
+            <div onclick="window.location.href='pos.html?sale_id=${sale.id}'" 
+                 style="background: white; border: 1px solid #ddd; border-radius: 8px; padding: 0.75rem; 
+                        cursor: pointer; transition: background 0.2s; display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span style="font-size: 1.2rem;">🪑</span>
+                    <span style="font-weight: 500;">${tableName}</span>
+                </div>
+                <div style="font-weight: 600; color: var(--primary-color);">${sale.total.toFixed(2)}€</div>
+            </div>
+        `;
+    }).join('');
+}
+
+async function selectTableForSave(tableId, existingSaleId) {
+    if (existingSaleId) {
+        // Add to existing sale
+        if (confirm("Esta mesa ya tiene una cuenta abierta. ¿Añadir productos a ella?")) {
+            // We need to switch context to that sale? Or just add lines?
+            // "Guardar en mesa" implies adding to it.
+            // We assign active saleId to state and call save logic
+            state.saleId = existingSaleId;
+            closeTableModal();
+            await saveOrder(); // Recursive call, but now state.saleId is set
+        }
+    } else {
+        // Open new sale
+        try {
+            const sale = await api.openSale({ table_id: tableId });
+            state.saleId = sale.id;
+            closeTableModal();
+            await saveOrder(); // Recursive call
+        } catch (err) {
+            showToast(err.message, 'error');
+        }
     }
 }
 
@@ -202,15 +358,22 @@ async function checkout() {
 
     try {
         if (state.saleId) {
-            // Add pending items if any
+            // Update sale with current cart content (Sync before close)
+            const lines = state.cart.map(item => ({
+                product_id: item.product.id,
+                quantity: item.quantity
+            }));
+
+            // If cart is empty, do we allow closing? (Empty Sale)
+            // Backend might complain if lines is empty for creation, but for update?
+            // If sale has lines and we send [], it deletes them.
+
             if (state.cart.length > 0) {
-                const lines = state.cart.map(item => ({
-                    product_id: item.product.id,
-                    quantity: item.quantity
-                }));
-                await api.addLinesToSale(state.saleId, lines);
-                state.cart = [];
+                await api.updateSale(state.saleId, { lines: lines });
+            } else {
+                // Warn or allow? Assuming we allow closing zero.
             }
+
             // Close sale
             await api.closeSale(state.saleId, paymentMethod);
             showToast('Cuenta cerrada y cobrada');
