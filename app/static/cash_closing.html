@@ -48,7 +48,7 @@
                         Calcula los totales y genera un registro de cierre.<br>
                         <strong>⚠️ LAS VENTAS SE BORRARÁN</strong> para empezar un nuevo turno desde cero.
                     </p>
-                    <button class="btn btn-secondary btn-large" onclick="confirmDelete()">
+                    <button class="btn btn-secondary btn-large" onclick="openConfirmModal()">
                         Realizar Cierre Total
                     </button>
                 </div>
@@ -58,12 +58,27 @@
                     <pre id="result-content"></pre>
                 </div>
             </div>
+
+            <!-- Confirm Modal -->
+            <div id="confirm-modal" class="modal-overlay">
+                <div class="modal-content">
+                    <div class="modal-title">¿Estás seguro?</div>
+                    <div class="modal-text">
+                        Esta acción <strong>BORRARÁ TODAS LAS VENTAS</strong> actuales de la base de datos.<br><br>
+                        No se puede deshacer. ¿Deseas continuar?
+                    </div>
+                    <div class="modal-buttons">
+                        <button class="btn btn-secondary" onclick="closeConfirmModal()">Cancelar</button>
+                        <button class="btn btn-danger" onclick="executeDelete()">Sí, Borrar Todo</button>
+                    </div>
+                </div>
+            </div>
         </main>
     </div>
 
-    <script src="js/api.js?v=1.1"></script>
-    <script src="js/utils.js?v=1.1"></script>
-    <script src="js/cash_closing.js?v=1.1"></script>
+    <script src="js/api.js?v=2.1"></script>
+    <script src="js/utils.js?v=2.1"></script>
+    <script src="js/cash_closing.js?v=2.1"></script>
 </body>
 
 </html>

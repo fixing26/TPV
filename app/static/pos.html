@@ -4,101 +4,191 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TPV Portfolio - Terminal</title>
+    <title>TPV - Terminal</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/shared.css?v=1.3">
-    <link rel="stylesheet" href="css/pos.css?v=1.3">
-    <link rel="stylesheet" href="css/active_orders.css?v=1.5">
+    <link rel="stylesheet" href="css/shared.css">
+    <link rel="stylesheet" href="css/classic_pos.css">
+    <link rel="stylesheet" href="css/active_orders.css"> <!-- Reusing table styles -->
 </head>
 
 <body>
-    <div class="app-container">
-        <!-- Sidebar -->
-        <nav class="sidebar">
-            <div class="logo">
-                🛒 TPV App
+    <div class="pos-container">
+        <!-- HEADER -->
+        <header class="pos-header">
+            <div class="brand-title">TPV</div>
+
+            <div class="header-info-block">
+                <span class="header-label">Turno</span>
+                <span>Mañana</span>
             </div>
-            <ul class="nav-links">
-                <a href="menu.html" class="nav-item">← Menú</a>
-                <a href="active_orders.html" class="nav-item">Mesas</a>
-                <a href="pos.html" class="nav-item active">Terminal</a>
-                <a href="products.html" class="nav-item">Productos</a>
-                <a href="sales.html" class="nav-item">Ventas</a>
-            </ul>
-            <div class="user-info">
-                <button class="btn btn-secondary" onclick="logout()">Cerrar Sesión</button>
+            <div class="header-info-block">
+                <span class="header-label">Camarero</span>
+                <span id="user-display">Admin</span>
             </div>
-        </nav>
+            <div class="header-info-block">
+                <span class="header-label">Mesa</span>
+                <span id="header-table-name">Sin Mesa</span>
+            </div>
+            <div class="header-info-block">
+                <span class="header-label">Pax</span>
+                <span>4</span>
+            </div>
 
-        <main class="main-content">
-            <div class="pos-layout">
+            <button class="btn btn-warning" onclick="window.location.href='index.html'">SALIR</button>
+        </header>
 
-                <div class="products-section">
-                    <h2 style="margin-top: 0;">Productos</h2>
+        <!-- BODY -->
+        <div class="pos-body">
+            <!-- MAIN CONTENT (Left) -->
+            <main class="main-content">
+                <!-- CATEGORIES -->
+                <div id="pos-categories" class="categories-container">
+                    <!-- Injected via JS -->
+                    <div class="category-btn active">Bebidas</div>
+                    <div class="category-btn">Comida</div>
+                    <div class="category-btn">Postres</div>
+                </div>
 
-                    <div id="pos-categories" class="categories-bar">
-                        <!-- Categories injected here -->
+                <!-- PRODUCTS GRID -->
+                <div id="pos-products" class="products-container">
+                    <!-- Injected via JS -->
+                </div>
+
+                <!-- FOOTER ACTIONS -->
+                <div class="action-bar">
+                    <button class="action-btn" onclick="state.saleId ? null : openTableModal()">
+                        <span class="icon">🪑</span>
+                        <span>Mesa</span>
+                    </button>
+                    <button class="action-btn" onclick="saveOrder()">
+                        <span class="icon">💾</span>
+                        <span>Guardar</span>
+                    </button>
+                    <button class="action-btn" onclick="openDrawer()">
+                        <span class="icon">🔓</span>
+                        <span>Cajón</span>
+                    </button>
+                    <button class="action-btn" onclick="printTicket()">
+                        <span class="icon">🖨️</span>
+                        <span>Ticket</span>
+                    </button>
+                    <!-- Mesas Abiertas Trigger (Instead of always visible sidebar) -->
+                    <button class="action-btn" onclick="toggleOpenTablesList()">
+                        <span class="icon">📋</span>
+                        <span>Abiertas</span>
+                    </button>
+                </div>
+            </main>
+
+            <!-- SIDEBAR (Right) -->
+            <aside class="sidebar">
+                <!-- TICKET HEADER -->
+                <div class="ticket-header">
+                    <span>Cant</span>
+                    <span>Producto</span>
+                    <span>Total</span>
+                </div>
+
+                <!-- CART ITEMS -->
+                <div id="cart-items" class="cart-items">
+                    <!-- Injected via JS -->
+                </div>
+
+                <!-- TOTAL DISPLAY -->
+                <div id="cart-total" class="total-display">0.00€</div>
+
+                <!-- NUMPAD BUFFER DISPLAY -->
+                <div id="numpad-display" class="total-display">
+                </div>
+
+                <!-- NUMPAD -->
+                <div class="numpad-container">
+                    <div class="numpad-controls">
+                        <button class="control-btn up-down">⬆</button>
+                        <button class="control-btn up-down">⬇</button>
+                        <button class="control-btn control-btn-del" onclick="removeSelectedItem()">DEL</button>
                     </div>
-
-                    <div id="pos-products" class="products-grid">
-                        <!-- Products injected here -->
+                    <div class="numpad-grid">
+                        <button class="num-btn" onclick="numpadInput(7)">7</button>
+                        <button class="num-btn" onclick="numpadInput(8)">8</button>
+                        <button class="num-btn" onclick="numpadInput(9)">9</button>
+                        <button class="num-btn" onclick="numpadInput(4)">4</button>
+                        <button class="num-btn" onclick="numpadInput(5)">5</button>
+                        <button class="num-btn" onclick="numpadInput(6)">6</button>
+                        <button class="num-btn" onclick="numpadInput(1)">1</button>
+                        <button class="num-btn" onclick="numpadInput(2)">2</button>
+                        <button class="num-btn" onclick="numpadInput(3)">3</button>
+                        <button class="num-btn" onclick="numpadInput('C')">C</button>
+                        <button class="num-btn" onclick="numpadInput(0)">0</button>
+                        <button class="num-btn num-btn-pay" onclick="openPaymentModal()">💵</button>
                     </div>
                 </div>
-                <div class="cart-panel">
-                    <div class="cart-header">
-                        Ticket Actual
-                        <div id="sale-info" style="font-size: 0.8rem; font-weight: normal; margin-top: 0.2rem;"></div>
-                    </div>
-                    <div id="cart-items" class="cart-items">
-                        <!-- Cart items injected here -->
-                        <div class="text-center" style="color: var(--text-muted); margin-top: 2rem;">
-                            Ticket vacío
-                        </div>
-                    </div>
-                    <div class="cart-footer">
-                        <div class="form-group" style="margin-bottom: 1rem;">
-                            <label class="form-label" style="font-size: 0.9rem;">Método de Pago</label>
-                            <select id="payment-method" class="form-input" style="padding: 0.5rem;">
-                                <option value="cash">Efectivo</option>
-                                <option value="card">Tarjeta</option>
-                            </select>
-                        </div>
-                        <div class="cart-total">
-                            <span>Total</span>
-                            <span id="cart-total">0.00€</span>
-                        </div>
-                        <button class="btn btn-secondary" onclick="saveOrder()"
-                            style="margin-bottom: 0.5rem; width: 100%;">GUARDAR EN MESA</button>
-                        <button class="btn btn-primary" onclick="checkout()" style="width: 100%;">COBRAR Y
-                            CERRAR</button>
-                    </div>
-                    <div style="margin-top: 2rem; border-top: 1px solid #eee; padding-top: 1rem;">
-                        <h3 style="margin: 0 0 1rem 0; font-size: 1rem;">Mesas Abiertas</h3>
-                        <div id="open-tables-list"
-                            style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 300px; overflow-y: auto;">
-                            <!-- Open tables injected here -->
-                        </div>
-                    </div>
-                </div>
+            </aside>
+        </div>
+    </div>
+
+    <!-- Modals (Table Selection, etc) - Reusing existing structure but might need styling tweaks -->
+    <div id="table-selection-modal" class="modal-overlay">
+        <div class="modal-content modal-content-large">
+            <div class="modal-header">
+                <h2>Seleccionar Mesa</h2>
+                <button class="close-btn" onclick="closeTableModal()">×</button>
             </div>
-        </main>
-        <div id="table-selection-modal" class="modal-overlay">
-            <div class="modal" style="max-width: 600px; width: 90%;">
-                <h3>Seleccionar Mesa</h3>
-                <div id="table-selection-grid" class="tables-grid"
-                    style="max-height: 50vh; overflow-y: auto; margin: 1rem 0;">
+            <div class="modal-body modal-body-scroll">
+                <div id="table-selection-grid" class="tables-grid">
                     <!-- Tables injected here -->
-                </div>
-                <div class="modal-actions">
-                    <button class="btn btn-secondary" onclick="closeTableModal()">Cancelar</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="js/api.js?v=1.9"></script>
-    <script src="js/utils.js?v=1.9"></script>
-    <script src="js/pos.js?v=1.9"></script>
+    <!-- Open Tables List Modal/Overlay (New, since we removed sidebar list) -->
+    <div id="open-tables-modal" class="modal-overlay">
+        <div class="modal-content modal-content-small">
+            <div class="modal-header">
+                <h2>Mesas Abiertas</h2>
+                <button class="close-btn"
+                    onclick="document.getElementById('open-tables-modal').classList.remove('active')">×</button>
+            </div>
+            <div id="open-tables-list-modal-content">
+                <!-- Open tables list -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div id="payment-modal" class="modal-overlay">
+        <div class="modal-content modal-content-small">
+            <div class="modal-header">
+                <h2>Cobrar / Cerrar Venta</h2>
+                <button class="close-btn" onclick="closePaymentModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div id="payment-total-display">
+                    0.00€
+                </div>
+
+                <div class="payment-buttons-grid">
+                    <button class="btn btn-secondary payment-btn payment-btn-cash" onclick="processPayment('cash')">
+                        💵 Efectivo
+                    </button>
+                    <button class="btn btn-secondary payment-btn payment-btn-visa" onclick="processPayment('visa')">
+                        💳 Visa
+                    </button>
+                    <button class="btn btn-secondary payment-btn payment-btn-amex" onclick="processPayment('amex')">
+                        💳 Amex
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="js/api.js?v=2.1"></script>
+    <script src="js/utils.js?v=2.1"></script>
+    <script src="js/pos.js?v=2.3"></script>
 </body>
 
 </html>

@@ -178,6 +178,67 @@ async def add_lines_to_account(
     return result.scalar_one()
 
 
+@router.put("/{sale_id}", response_model=SaleOut)
+async def update_sale(
+    sale_id: int,
+    sale_in: SaleUpdate,
+    db: AsyncSession = Depends(get_session)
+):
+    """
+    Update a sale (replace lines).
+    Used for full ticket editing.
+    """
+    result = await db.execute(select(Sale).options(selectinload(Sale.lines)).where(Sale.id == sale_id))
+    sale = result.scalar_one_or_none()
+    
+    if not sale:
+        raise HTTPException(status_code=404, detail="Cuenta no encontrada")
+    
+    if sale.status != "OPEN":
+        raise HTTPException(status_code=400, detail="La cuenta no está abierta")
+
+    # Clear existing lines
+    # We need to manually delete via query or removing from relationship if cascade is set?
+    # Safer to delete via query to ensure table cleanup
+    await db.execute(
+        select(SaleLine).where(SaleLine.sale_id == sale_id).execution_options(synchronize_session=False)
+    )
+    # Actually, SQLAlchemy async delete syntax is slightly different or we iterate.
+    # Let's iterate and delete to be safe with ORM if unsure about bulk delete syntax in this setup
+    for line in sale.lines:
+        await db.delete(line)
+        
+    # Add new lines
+    total = 0.0
+    for line_in in sale_in.lines:
+        # Check product
+        p_res = await db.execute(select(Product).where(Product.id == line_in.product_id))
+        product = p_res.scalar_one_or_none()
+        if not product:
+             raise HTTPException(status_code=404, detail=f"Producto {line_in.product_id} no encontrado")
+        
+        price_unit = product.price
+        line_total = price_unit * line_in.quantity
+        
+        sale_line = SaleLine(
+            sale_id=sale.id,
+            product_id=product.id,
+            quantity=line_in.quantity,
+            price_unit=price_unit,
+            line_total=line_total,
+        )
+        db.add(sale_line)
+        total += line_total
+    
+    sale.total = total
+    db.add(sale)
+    await db.commit()
+    
+    # Refresh return
+    result = await db.execute(select(Sale).options(selectinload(Sale.lines)).where(Sale.id == sale.id))
+    return result.scalar_one()
+
+
 @router.post("/{sale_id}/close", response_model=SaleOut)
 async def close_account(
     sale_id: int,

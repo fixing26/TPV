@@ -19,10 +19,23 @@ async function handleClosing() {
     }
 }
 
-async function confirmDelete() {
-    if (!confirm("¿ESTÁS SEGURO?\n\nEsta acción borrará todas las ventas actuales de la base de datos.\nNo se puede deshacer.")) {
-        return;
-    }
+// function confirmDelete() {
+//     if (!confirm("¿ESTÁS SEGURO?\n\nEsta acción borrará todas las ventas actuales de la base de datos.\nNo se puede deshacer.")) {
+//         return;
+//     }
+//     executeDelete();
+// }
+
+function openConfirmModal() {
+    document.getElementById('confirm-modal').classList.add('active');
+}
+
+function closeConfirmModal() {
+    document.getElementById('confirm-modal').classList.remove('active');
+}
+
+async function executeDelete() {
+    closeConfirmModal();
     try {
         const result = await api.deleteSales();
         showToast('Ventas eliminadas correctamente', 'info');

@@ -11,7 +11,10 @@ const state = {
     activeSales: [],
     selectedCategoryId: null,
     saleId: null, // If null, it's a direct immediate sale
-    currentSale: null
+    currentSale: null,
+    currentSale: null,
+    selectedCartIndex: null, // For selecting a line to modify directly
+    numpadBuffer: '' // New: Buffer for numpad input
 };
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -71,26 +74,23 @@ async function loadPos() {
 }
 
 function updateSaleInfo(sale) {
-    const infoEl = document.getElementById('sale-info');
-    if (infoEl) {
+    // Classic POS Header Update
+    const tableNameEl = document.getElementById('header-table-name');
+    if (tableNameEl) {
         let tableName = 'Sin Mesa';
         if (sale.table_id) {
             const table = state.tables.find(t => t.id === sale.table_id);
             if (table) tableName = table.name;
             else tableName = `Mesa #${sale.table_id}`;
         }
-
-        infoEl.innerHTML = `
-            <div>Mesa: <b>${tableName}</b></div>
-            <div>Ticket: #${sale.id} - Previo: <b>${sale.total.toFixed(2)}€</b></div>
-        `;
+        tableNameEl.textContent = tableName + (sale.id ? ` (Tkt: ${sale.id})` : '');
     }
 }
 
 function renderCategories() {
     const bar = document.getElementById('pos-categories');
     bar.innerHTML = state.categories.map(c => `
-        <div class="category-pill ${c.id === state.selectedCategoryId ? 'active' : ''}"
+        <div class="category-btn ${c.id === state.selectedCategoryId ? 'active' : ''}"
              onclick="selectCategory(${c.id})">
             ${c.name}
         </div>
@@ -116,27 +116,36 @@ function renderProductsGrid() {
         return;
     }
 
-    grid.innerHTML = filteredProducts.map(p => `
-        <div class="product-card" onclick="addToCart(${p.id})">
-
-            <div>
-                <div class="product-name">${p.name}</div>
-                <div class="product-category-name">${p.category ? p.category.name : '-'}</div>
-            </div>
-            <div class="product-price">${p.price.toFixed(2)}€</div>
+    grid.innerHTML = filteredProducts.map((p, index) => {
+        // Color variation logic based on index or category could go here
+        // For now simple cycle based on id just to vary it
+        // Or keep css nth-child logic which handles it based on DOM position
+        return `
+        <div class="product-btn" onclick="addToCart(${p.id})">
+            <div>${p.name}</div>
+            <div style="font-size: 0.8rem; margin-top: 2px;">${p.price.toFixed(2)}€</div>
         </div>
-    `).join('');
+    `;
+    }).join('');
 }
 
 function addToCart(productId) {
     const product = state.products.find(p => p.id === productId);
     if (!product) return;
 
+    // Check numpad buffer for quantity
+    let quantity = 1;
+    if (state.numpadBuffer) {
+        quantity = parseInt(state.numpadBuffer);
+        state.numpadBuffer = ''; // Clear buffer
+        updateNumpadDisplay();
+    }
+
     const existing = state.cart.find(item => item.product.id === productId);
     if (existing) {
-        existing.quantity++;
+        existing.quantity += quantity;
     } else {
-        state.cart.push({ product, quantity: 1 });
+        state.cart.push({ product, quantity: quantity });
     }
     renderCart();
 }
@@ -153,36 +162,111 @@ function renderCart() {
     let total = 0;
 
     if (state.cart.length === 0) {
-        container.innerHTML = `
-            <div class="text-center" style="color: var(--text-muted); margin-top: 2rem;">
-                Ticket vacío
-            </div>
-        `;
+        container.innerHTML = ``; // Empty list
     } else {
         container.innerHTML = state.cart.map((item, index) => {
             const itemTotal = item.product.price * item.quantity;
             total += itemTotal;
+            const isSelected = index === state.selectedCartIndex;
+
             return `
-                <div class="cart-item">
-                    <div class="cart-item-info">
-                        <div class="cart-item-title">${item.product.name}</div>
-                        <div class="cart-item-price">${item.quantity} x ${item.product.price.toFixed(2)}€</div>
-                    </div>
-                    <div class="cart-item-actions">
-                        <div class="product-price">${itemTotal.toFixed(2)}€</div>
-                        <button class="btn-icon" onclick="removeFromCart(${index})">✕</button>
-                    </div>
+                <div class="cart-line ${isSelected ? 'selected' : ''}" onclick="selectCartItem(${index})">
+                    <div>${item.quantity}</div>
+                    <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${item.product.name}</div>
+                    <div>${itemTotal.toFixed(2)}€</div>
                 </div>
             `;
         }).join('');
     }
 
     totalEl.textContent = `${total.toFixed(2)}€`;
+}
 
-    // If working on an open table, we might show grand total (existing + new)
-    if (state.currentSale) {
-        // logic to show grand total could go here
+// Selection Logic
+function selectCartItem(index) {
+    state.selectedCartIndex = index;
+    renderCart(); // Re-render to show selection highlight
+}
+
+function removeSelectedItem() {
+    if (state.selectedCartIndex !== null && state.cart[state.selectedCartIndex]) {
+        removeFromCart(state.selectedCartIndex);
+        state.selectedCartIndex = null;
     }
+}
+
+// Numpad logic
+// Numpad logic
+function numpadInput(key) {
+    if (key === 'C') {
+        state.numpadBuffer = '';
+    } else {
+        // Append to buffer usually, but verify length
+        if (state.numpadBuffer.length < 5) {
+            state.numpadBuffer += key.toString();
+        }
+    }
+
+    updateNumpadDisplay();
+
+    // If a cart item is selected, we MIGHT update it immediately?
+    // User request: "ver que numero se esta cargando en el teclado" -> implies buffer preference
+    // "cuando le de al producto este sea con el numero" -> implies buffer usage for ADD
+    // If we want to EDIT selected item, maybe we need an "ENTER" button or direct update?
+    // Let's adopt this: If item selected, numpad updates it directly? 
+    // OR: Numpad fills buffer, then we need a button to apply?
+    // User didn't specify for edit. Let's keep ADD logic as priority.
+    // However, if we click a line, maybe we should auto-fill buffer with that qty?
+    // For now, let's keep buffer independent for ADDING.
+    // If user wants to edit qty of selected line, maybe "Enter" or "Update"?
+
+    // Legacy support: If item IS selected, update it directly? 
+    // "dale un espacio... para ver que numero se esta cargando" suggest typing BEFORE action.
+    if (state.selectedCartIndex !== null && state.cart[state.selectedCartIndex]) {
+        // If we implement 'type to edit selected', we should probably do it here.
+        // But user specifically asked for buffer behavior for ADDING.
+        // Let's stick to Buffer -> Display.
+        // If users clicks product -> Add (Buffer)
+        // If user wants to change qty of existing... maybe we add a button "Qty"?
+    }
+}
+
+function updateNumpadDisplay() {
+    const el = document.getElementById('numpad-display');
+    if (el) el.textContent = state.numpadBuffer;
+}
+
+// New Modal Logic for Open Tables List
+function toggleOpenTablesList() {
+    const modal = document.getElementById('open-tables-modal');
+    modal.classList.add('active'); // Use standard overlay logic
+    renderOpenTablesModalContent();
+}
+
+function renderOpenTablesModalContent() {
+    const container = document.getElementById('open-tables-list-modal-content');
+    if (!container) return;
+
+    const tableSales = state.activeSales.filter(s => s.table_id);
+
+    if (tableSales.length === 0) {
+        container.innerHTML = '<div style="color: grey;">No hay mesas abiertas</div>';
+        return;
+    }
+
+    container.innerHTML = tableSales.map(sale => {
+        const table = state.tables.find(t => t.id === sale.table_id);
+        const tableName = table ? table.name : `Mesa #${sale.table_id}`;
+
+        return `
+            <div onclick="window.location.href='pos.html?sale_id=${sale.id}'" 
+                 style="background: white; border: 1px solid #ddd; border-radius: 4px; padding: 10px; 
+                        cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                <strong>${tableName}</strong>
+                <span style="color: blue; font-weight: bold;">${sale.total.toFixed(2)}€</span>
+            </div>
+        `;
+    }).join('');
 }
 
 async function saveOrder() {
@@ -272,6 +356,7 @@ function renderTableSelection() {
         const total = sale ? sale.total.toFixed(2) + '€' : 'Libre';
         const statusClass = isBusy ? 'status-busy' : 'status-free';
 
+        // Simplified table card for modal
         return `
             <div class="table-card ${statusClass}" 
                  onclick="selectTableForSave(${table.id}, ${isBusy ? (sale ? sale.id : 'null') : 'null'})">
@@ -306,7 +391,7 @@ function renderOpenTablesSideList() {
 
     container.innerHTML = tableSales.map(sale => {
         const table = state.tables.find(t => t.id === sale.table_id);
-        const tableName = table ? table.name : `Mesa #${sale.table_id}`;
+        const tableName = table ? table.name : `Mesa #${sale.table_id} `;
 
         return `
             <div onclick="window.location.href='pos.html?sale_id=${sale.id}'" 
@@ -346,16 +431,32 @@ async function selectTableForSave(tableId, existingSaleId) {
     }
 }
 
-async function checkout() {
+function openPaymentModal() {
     // If empty cart and no open sale, ignore
     if (state.cart.length === 0 && !state.saleId) return;
 
-    // If active sale:
-    // 1. If cart has items, add them first (auto-save) or just confirm?
-    // Let's assume we must add items first if any.
+    // Calculate total to show
+    // Should be consistent with what's on screen
+    const currentTotal = parseFloat(document.getElementById('cart-total').textContent.replace('€', ''));
 
-    const paymentMethod = document.getElementById('payment-method').value;
+    // If we have an active sale (server side), the local cart might be partial updates?
+    // But `state.activeSales` has the server total? 
+    // Actually `renderCart` calculates total from `state.cart`.
+    // If we are in edit mode, `state.cart` represents the full state.
 
+    document.getElementById('payment-total-display').textContent = currentTotal.toFixed(2) + '€';
+
+    const modal = document.getElementById('payment-modal');
+    modal.classList.add('active');
+}
+
+function closePaymentModal() {
+    document.getElementById('payment-modal').classList.remove('active');
+}
+
+async function processPayment(paymentMethod) {
+
+    // Original Checkout Logic moved here
     try {
         if (state.saleId) {
             // Update sale with current cart content (Sync before close)
@@ -364,23 +465,18 @@ async function checkout() {
                 quantity: item.quantity
             }));
 
-            // If cart is empty, do we allow closing? (Empty Sale)
-            // Backend might complain if lines is empty for creation, but for update?
-            // If sale has lines and we send [], it deletes them.
-
             if (state.cart.length > 0) {
                 await api.updateSale(state.saleId, { lines: lines });
-            } else {
-                // Warn or allow? Assuming we allow closing zero.
             }
 
             // Close sale
             await api.closeSale(state.saleId, paymentMethod);
+            closePaymentModal();
             showToast('Cuenta cerrada y cobrada');
             setTimeout(() => window.location.href = 'active_orders.html', 1000);
 
         } else {
-            // Direct sale (Legacy/Quick mode)
+            // Direct sale
             const saleData = {
                 payment_method: paymentMethod,
                 lines: state.cart.map(item => ({
@@ -389,9 +485,12 @@ async function checkout() {
                 }))
             };
             await api.createSale(saleData);
+            closePaymentModal();
             showToast('Venta realizada con éxito');
             state.cart = [];
+            state.numpadBuffer = '';
             renderCart();
+            updateNumpadDisplay();
         }
     } catch (err) {
         showToast(err.message, 'error');
