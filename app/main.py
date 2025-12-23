@@ -75,4 +75,22 @@ static_dir = os.path.join(os.path.dirname(__file__), "static")
 if not os.path.exists(static_dir):
     os.makedirs(static_dir)
 
+# --- CACHE BUSTING / VERSIÓN AUTOMÁTICA ---
+from app.core.static_handler import get_static_handler
+serve_static_html = get_static_handler(static_dir)
+
+@app.get("/", include_in_schema=False)
+async def serve_root():
+    return await serve_static_html("index.html")
+
+@app.get("/{filename}.html", include_in_schema=False)
+async def serve_html_page(filename: str):
+    """
+    Intercepta peticiones a archivos .html para inyectar versiones (?v=timestamp)
+    en los enlaces a CSS y JS locales.
+    """
+    return await serve_static_html(f"{filename}.html")
+
+# Montar StaticFiles para el resto de recursos (CSS, JS, imágenes, etc.)
+# Nota: StaticFiles servirá los archivos ignorando los query params (?v=...)
 app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")

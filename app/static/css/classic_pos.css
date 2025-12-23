@@ -33,7 +33,7 @@ body {
     grid-template-rows: 60px 1fr;
     /* Header, Main Body */
     height: 100vh;
-    width: 100vw;
+    width: 100%;
     background-color: var(--bg-panel);
 }
 
@@ -67,7 +67,7 @@ body {
 /* Body: Main Left + Sidebar Right */
 .pos-body {
     display: grid;
-    grid-template-columns: 70% 30%;
+    grid-template-columns: 65% 35%;
     /* Main content | Sidebar */
     height: 100%;
     overflow: hidden;
@@ -196,7 +196,9 @@ body {
 .sidebar {
     background: #dcdcdc;
     border-left: 2px solid #bdc3c7;
-    border-right: 2px solid #bdc3c7;
+    /* border-right removed */
+    width: 100%;
+    /* Override shared.css 250px limit */
     display: grid;
     grid-template-rows: auto 1fr auto auto;
     /* Header | List | Numpad | Actions */

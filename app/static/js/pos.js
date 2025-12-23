@@ -305,16 +305,10 @@ async function addToActiveSale(saleId, redirect = true) {
         // So clearing it means clearing the ticket for the user visually unless we re-fetch.
 
         if (redirect) {
-            if (confirm("Pedido guardado. ¿Volver a mesas?")) {
-                window.location.href = 'active_orders.html';
-            } else {
-                // Reload to confirm sync
-                const sale = await api.getSale(saleId);
-                state.currentSale = sale;
-                // Ensure cart matches returned state (in case of pricing changes etc)
-                // But simply re-rendering what we have is faster.
-                updateSaleInfo(sale);
-            }
+            // Stay on page as requested
+            const sale = await api.getSale(saleId);
+            state.currentSale = sale;
+            updateSaleInfo(sale);
         }
     } catch (err) {
         showToast(err.message, 'error');
@@ -493,6 +487,9 @@ async function processPayment(paymentMethod) {
             updateNumpadDisplay();
         }
     } catch (err) {
-        showToast(err.message, 'error');
     }
+}
+
+function exitToIndex() {
+    window.location.href = 'index.html';
 }
