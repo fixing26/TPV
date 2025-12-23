@@ -36,6 +36,8 @@ class SaleUpdate(BaseModel):
 
 # --------- OUTPUT (lo que responde la API) --------- #
 
+from ..products.schemas import ProductOut
+
 class SaleLineOut(BaseModel):
     """Schema for sale line response."""
     id: int
@@ -43,10 +45,13 @@ class SaleLineOut(BaseModel):
     quantity: int
     price_unit: float
     line_total: float
+    product: ProductOut | None = None
 
     class Config:
         from_attributes = True
 
+
+from ..auth.schemas import UserOut
 
 class SaleOut(BaseModel):
     """Schema for sale response."""
@@ -58,6 +63,8 @@ class SaleOut(BaseModel):
     table_id: int | None = None
     name: str | None = None
     lines: List[SaleLineOut]
+    creator: UserOut | None = None
+    closer: UserOut | None = None
 
     class Config:
         from_attributes = True

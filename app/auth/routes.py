@@ -19,16 +19,6 @@ router = APIRouter()
 async def register(user_in: UserCreate, db: AsyncSession = Depends(get_session)):
     """
     Register a new user.
-
-    Args:
-        user_in (UserCreate): User registration data (username, password).
-        db (AsyncSession): Database session.
-
-    Returns:
-        UserOut: The created user.
-
-    Raises:
-        HTTPException: If the username already exists.
     """
     try:
         result = await db.execute(select(User).where(User.username == user_in.username))
@@ -39,6 +29,7 @@ async def register(user_in: UserCreate, db: AsyncSession = Depends(get_session))
         user = User(
             username=user_in.username,
             hashed_password=get_password_hash(user_in.password),
+            role=user_in.role
         )
         db.add(user)
         await db.commit()
@@ -53,16 +44,6 @@ async def register(user_in: UserCreate, db: AsyncSession = Depends(get_session))
 async def login(user_in: UserCreate, db: AsyncSession = Depends(get_session)):
     """
     Authenticate a user and return a JWT token.
-
-    Args:
-        user_in (UserCreate): Login credentials.
-        db (AsyncSession): Database session.
-
-    Returns:
-        Token: Access token.
-
-    Raises:
-        HTTPException: If credentials are invalid.
     """
     result = await db.execute(select(User).where(User.username == user_in.username))
     user = result.scalar_one_or_none()
@@ -71,5 +52,29 @@ async def login(user_in: UserCreate, db: AsyncSession = Depends(get_session)):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Credenciales incorrectas",
         )
-    access_token = create_access_token({"sub": str(user.id)})
-    return Token(access_token=access_token)
+    access_token = create_access_token({"sub": str(user.id), "role": user.role})
+    return Token(access_token=access_token, role=user.role)
+
+@router.get("/", response_model=list[UserOut])
+async def get_users(db: AsyncSession = Depends(get_session)):
+    """List all users."""
+    result = await db.execute(select(User))
+    return result.scalars().all()
+
+from sqlalchemy import update
+from app.sales.models import Sale
+
+# ... (existing imports)
+
+@router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_user(user_id: int, db: AsyncSession = Depends(get_session)):
+    """Delete a user."""
+    user = await db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    # Unlink user from sales (set user_id = NULL)
+    await db.execute(update(Sale).where(Sale.user_id == user_id).values(user_id=None))
+    
+    await db.delete(user)
+    await db.commit()

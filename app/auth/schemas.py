@@ -13,6 +13,7 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     """Schema for user creation (registration)."""
     password: str
+    role: str = "cashier"
 
 class UserOut(UserBase):
     """Schema for user response (excluding password)."""
@@ -26,3 +27,5 @@ class Token(BaseModel):
     """Schema for JWT token response."""
     access_token: str
     token_type: str = "bearer"
+    role: str
+

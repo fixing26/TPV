@@ -34,6 +34,58 @@
                 <!-- Sales injected here -->
             </div>
         </main>
+        </main>
+    </div>
+
+    <!-- Sale Detail Modal -->
+    <div id="sale-detail-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Detalle de Venta #<span id="detail-id"></span></h2>
+                <button class="close-btn" onclick="closeSaleDetail()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="detail-info-grid">
+                    <div>
+                        <strong>Fecha:</strong> <span id="detail-date"></span>
+                    </div>
+                    <div>
+                        <strong>Estado:</strong> <span id="detail-status"></span>
+                    </div>
+                    <div>
+                        <strong>Creado por:</strong> <span id="detail-creator"></span>
+                    </div>
+                    <div>
+                        <strong>Cerrado por:</strong> <span id="detail-closer"></span>
+                    </div>
+                    <div>
+                        <strong>Mesa/Nombre:</strong> <span id="detail-table"></span>
+                    </div>
+                    <div>
+                        <strong>Pago:</strong> <span id="detail-payment"></span>
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 1.5rem; border-bottom: 1px solid #eee; padding-bottom: 0.5rem;">Productos</h3>
+                <div class="detail-products-header">
+                    <span>Cant</span>
+                    <span>Producto</span>
+                    <span style="text-align: right;">Precio</span>
+                    <span style="text-align: right;">Total</span>
+                </div>
+                <div id="detail-lines" class="detail-lines-container">
+                    <!-- Lines injected here -->
+                </div>
+
+                <div class="detail-total-row">
+                    <span>Total Venta:</span>
+                    <span id="detail-total"></span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeSaleDetail()">Cerrar</button>
+            </div>
+        </div>
     </div>
 
     <script src="js/api.js?v=2.1"></script>

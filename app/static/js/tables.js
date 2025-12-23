@@ -4,6 +4,12 @@ const state = {
 
 document.addEventListener('DOMContentLoaded', () => {
     checkAuth(true);
+    // Restrict access to Admin
+    if (localStorage.getItem('role') !== 'admin') {
+        alert('Acceso restringido a administradores');
+        window.location.href = 'menu.html';
+        return;
+    }
     loadTables();
 });
 

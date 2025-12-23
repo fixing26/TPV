@@ -8,7 +8,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, joinedload
 
 from .models import Sale, SaleLine
 from .schemas import SaleCreate, SaleOut, SaleOpen, SaleUpdate, SaleLineCreate
@@ -46,7 +46,6 @@ async def create_sale(
 
     total = 0.0
     for line_in in sale_in.lines:
-        # Code reuse logic could be improved here, but keeping inline for now
         result = await db.execute(select(Product).where(Product.id == line_in.product_id))
         product = result.scalar_one_or_none()
         if not product:
@@ -69,8 +68,17 @@ async def create_sale(
     db.add(sale)
     await db.commit()
     
-    result = await db.execute(select(Sale).options(selectinload(Sale.lines)).where(Sale.id == sale.id))
-    return result.scalar_one()
+    # Reload with full options
+    result = await db.execute(
+        select(Sale)
+        .options(
+            selectinload(Sale.lines).joinedload(SaleLine.product).joinedload(Product.category),
+            joinedload(Sale.creator),
+            joinedload(Sale.closer)
+        )
+        .where(Sale.id == sale.id)
+    )
+    return result.unique().scalar_one()
 
 
 @router.post("/open", response_model=SaleOut, status_code=status.HTTP_201_CREATED)
@@ -109,9 +117,18 @@ async def open_account(
     db.add(sale)
     await db.commit()
     await db.refresh(sale)
-    # Ensure lines is empty list for schema
-    result = await db.execute(select(Sale).options(selectinload(Sale.lines)).where(Sale.id == sale.id))
-    return result.scalar_one()
+    
+    # Reload with full options
+    result = await db.execute(
+        select(Sale)
+        .options(
+            selectinload(Sale.lines).joinedload(SaleLine.product).joinedload(Product.category),
+            joinedload(Sale.creator),
+            joinedload(Sale.closer)
+        )
+        .where(Sale.id == sale.id)
+    )
+    return result.unique().scalar_one()
 
 
 @router.get("/active", response_model=List[SaleOut])
@@ -123,11 +140,15 @@ async def list_active_accounts(
     """
     result = await db.execute(
         select(Sale)
-        .options(selectinload(Sale.lines))
+        .options(
+            selectinload(Sale.lines).joinedload(SaleLine.product).joinedload(Product.category),
+            joinedload(Sale.creator),
+            joinedload(Sale.closer)
+        )
         .where(Sale.status == "OPEN")
         .order_by(Sale.created_at.desc())
     )
-    return result.scalars().all()
+    return result.unique().scalars().all()
 
 
 @router.post("/{sale_id}/lines", response_model=SaleOut)
@@ -139,7 +160,7 @@ async def add_lines_to_account(
     """
     Add items to an existing OPEN account.
     """
-    result = await db.execute(select(Sale).options(selectinload(Sale.lines)).where(Sale.id == sale_id))
+    result = await db.execute(select(Sale).where(Sale.id == sale_id))
     sale = result.scalar_one_or_none()
     
     if not sale:
@@ -173,9 +194,17 @@ async def add_lines_to_account(
     db.add(sale)
     await db.commit()
     
-    # Refresh return
-    result = await db.execute(select(Sale).options(selectinload(Sale.lines)).where(Sale.id == sale.id))
-    return result.scalar_one()
+    # Reload with full options
+    result = await db.execute(
+        select(Sale)
+        .options(
+            selectinload(Sale.lines).joinedload(SaleLine.product).joinedload(Product.category),
+            joinedload(Sale.creator),
+            joinedload(Sale.closer)
+        )
+        .where(Sale.id == sale.id)
+    )
+    return result.unique().scalar_one()
 
 
 @router.put("/{sale_id}", response_model=SaleOut)
@@ -188,6 +217,7 @@ async def update_sale(
     Update a sale (replace lines).
     Used for full ticket editing.
     """
+    # Load with collection to cleanly delete/update
     result = await db.execute(select(Sale).options(selectinload(Sale.lines)).where(Sale.id == sale_id))
     sale = result.scalar_one_or_none()
     
@@ -198,20 +228,12 @@ async def update_sale(
         raise HTTPException(status_code=400, detail="La cuenta no está abierta")
 
     # Clear existing lines
-    # We need to manually delete via query or removing from relationship if cascade is set?
-    # Safer to delete via query to ensure table cleanup
-    await db.execute(
-        select(SaleLine).where(SaleLine.sale_id == sale_id).execution_options(synchronize_session=False)
-    )
-    # Actually, SQLAlchemy async delete syntax is slightly different or we iterate.
-    # Let's iterate and delete to be safe with ORM if unsure about bulk delete syntax in this setup
     for line in sale.lines:
         await db.delete(line)
         
     # Add new lines
     total = 0.0
     for line_in in sale_in.lines:
-        # Check product
         p_res = await db.execute(select(Product).where(Product.id == line_in.product_id))
         product = p_res.scalar_one_or_none()
         if not product:
@@ -234,21 +256,33 @@ async def update_sale(
     db.add(sale)
     await db.commit()
     
-    # Refresh return
-    result = await db.execute(select(Sale).options(selectinload(Sale.lines)).where(Sale.id == sale.id))
-    return result.scalar_one()
+    # Reload with full options
+    result = await db.execute(
+        select(Sale)
+        .options(
+            selectinload(Sale.lines).joinedload(SaleLine.product).joinedload(Product.category),
+            joinedload(Sale.creator),
+            joinedload(Sale.closer)
+        )
+        .where(Sale.id == sale.id)
+    )
+    return result.unique().scalar_one()
 
 
 @router.post("/{sale_id}/close", response_model=SaleOut)
 async def close_account(
     sale_id: int,
     payment_method: str = "cash",
-    db: AsyncSession = Depends(get_session)
+    db: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user)
 ):
     """
     Close (checkout) an account.
     """
-    result = await db.execute(select(Sale).options(selectinload(Sale.lines)).where(Sale.id == sale_id))
+    result = await db.execute(
+        select(Sale)
+        .where(Sale.id == sale_id)
+    )
     sale = result.scalar_one_or_none()
     
     if not sale:
@@ -259,60 +293,58 @@ async def close_account(
     
     sale.status = "CLOSED"
     sale.payment_method = payment_method
+    sale.closed_by_id = current_user.id
     db.add(sale)
     await db.commit()
     
-    return sale
-
+    # Reload relationship to return updated data
+    result = await db.execute(
+        select(Sale)
+        .options(
+            selectinload(Sale.lines).joinedload(SaleLine.product).joinedload(Product.category),
+            joinedload(Sale.creator),
+            joinedload(Sale.closer)
+        )
+        .where(Sale.id == sale.id)
+    )
+    return result.unique().scalar_one()
 
 
 @router.get("/", response_model=List[SaleOut])
 async def list_sales(db: AsyncSession = Depends(get_session),skip: int = 0,limit: int = 100,):
     """
     List sales with pagination.
-
-    Args:
-        db (AsyncSession): Database session.
-        skip (int): Number of records to skip.
-        limit (int): Maximum number of records to return.
-
-    Returns:
-        List[SaleOut]: List of sales.
     """
     result = await db.execute(
         select(Sale)
-        .options(selectinload(Sale.lines))
+        .options(
+            selectinload(Sale.lines).joinedload(SaleLine.product).joinedload(Product.category),
+            joinedload(Sale.creator),
+            joinedload(Sale.closer)
+        )
         .offset(skip)
         .limit(limit)
         .order_by(Sale.created_at.desc())
     )
-    sales = result.scalars().all()
-    return sales
+    return result.unique().scalars().all()
 
 
 @router.get("/{sale_id}", response_model=SaleOut)
 async def get_sale(sale_id: int,db: AsyncSession = Depends(get_session),):
     """
     Get a specific sale by ID.
-
-    Args:
-        sale_id (int): Sale ID.
-        db (AsyncSession): Database session.
-
-    Returns:
-        SaleOut: The requested sale.
-
-    Raises:
-        HTTPException: If sale is not found.
     """
     result = await db.execute(
         select(Sale)
-        .options(selectinload(Sale.lines))
+        .options(
+            selectinload(Sale.lines).joinedload(SaleLine.product).joinedload(Product.category),
+            joinedload(Sale.creator),
+            joinedload(Sale.closer)
+        )
         .where(Sale.id == sale_id)
     )
-    sale = result.scalar_one_or_none()
+    sale = result.unique().scalar_one_or_none()
     if not sale:
         raise HTTPException(status_code=404, detail="Venta no encontrada")
 
     return sale
-

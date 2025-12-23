@@ -36,6 +36,7 @@ class Sale(Base):
 
     # Opcional: relacionar con usuario si usas auth más adelante
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    closed_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     
     table_id = Column(Integer, ForeignKey("tables.id"), nullable=True)
     name = Column(String, nullable=True)
@@ -47,6 +48,8 @@ class Sale(Base):
     )
     
     table = relationship("app.tables.models.Table")
+    creator = relationship("app.auth.models.User", foreign_keys=[user_id])
+    closer = relationship("app.auth.models.User", foreign_keys=[closed_by_id])
 
 
 class SaleLine(Base):

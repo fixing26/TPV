@@ -52,6 +52,10 @@ class ApiClient {
             throw new Error(errorMessage);
         }
 
+        if (response.status === 204) {
+            return null;
+        }
+
         return response.json();
     }
 
@@ -182,6 +186,24 @@ class ApiClient {
 
     async deleteTable(id) {
         return this.request(`/tables/${id}`, {
+            method: 'DELETE'
+        });
+    }
+
+    // --- User Management Endpoints ---
+    async getUsers() {
+        return this.request('/auth/');
+    }
+
+    async createUser(userData) {
+        return this.request('/auth/register', {
+            method: 'POST',
+            body: JSON.stringify(userData) // { username, password (pin), role }
+        });
+    }
+
+    async deleteUser(userId) {
+        return this.request(`/auth/${userId}`, {
             method: 'DELETE'
         });
     }

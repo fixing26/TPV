@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TPV Portfolio - Gestión de Usuarios</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/shared.css">
+    <link rel="stylesheet" href="css/menu.css"> <!-- Reusing menu/card styles if appropriate, or just basic -->
+    <style>
+        .users-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .user-card {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-role {
+            font-size: 0.8rem;
+            padding: 0.2rem 0.5rem;
+            background: #eef2ff;
+            color: var(--primary-color);
+            border-radius: 4px;
+        }
+
+        .form-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .form-grid {
+            display: grid;
+            gap: 1rem;
+            grid-template-columns: 1fr 1fr;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+        <nav class="sidebar">
+            <div class="logo">🛒 TPV App</div>
+            <ul class="nav-links">
+                <a href="menu.html" class="nav-item">← Volver al Menú</a>
+                <a href="users.html" class="nav-item active">Usuarios</a>
+            </ul>
+        </nav>
+
+        <main class="main-content">
+            <div class="users-container">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                    <h2>Gestión de Usuarios</h2>
+                </div>
+
+                <!-- Create User Form -->
+                <div class="form-card">
+                    <h3 style="margin-top: 0;">Crear Nuevo Usuario</h3>
+                    <form id="create-user-form" onsubmit="handleCreateUser(event)" autocomplete="off">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label">Nombre de Usuario</label>
+                                <input type="text" name="username" class="form-input" required
+                                    placeholder="Ej. Camareo1" autocomplete="off">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">PIN (Clave Numérica)</label>
+                                <input type="password" name="pin" class="form-input" required placeholder="4 dígitos"
+                                    pattern="[0-9]{4}" maxlength="4" autocomplete="new-password" readonly
+                                    onfocus="this.removeAttribute('readonly');">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Rol</label>
+                                <select name="role" class="form-input">
+                                    <option value="cashier">Camarero / Empleado</option>
+                                    <option value="admin">Administrador</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="display: flex; align-items: flex-end;">
+                                <button type="submit" class="btn btn-primary" style="width: 100%;">Crear
+                                    Usuario</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Users List -->
+                <h3 class="section-title">Usuarios Existentes</h3>
+                <div id="users-list">
+                    <!-- Injected via JS -->
+                    <p style="text-align: center; color: gray;">Cargando usuarios...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="js/api.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/users.js"></script>
+</body>
+
+</html>

@@ -14,6 +14,8 @@ async function handleLogin(e) {
     try {
         const data = await api.login(username, password);
         api.setToken(data.access_token);
+        // Store role for frontend permission checks
+        localStorage.setItem('role', data.role || 'cashier');
         window.location.href = 'menu.html';
     } catch (err) {
         showToast(err.message, 'error');

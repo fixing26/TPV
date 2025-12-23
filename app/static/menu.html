@@ -48,13 +48,110 @@
                     <div class="menu-title">Cierre de Caja</div>
                     <div class="menu-desc">Finalizar turno</div>
                 </a>
-                <div class="menu-card" onclick="logout()">
-                    <div class="menu-icon">👤</div>
-                    <div class="menu-title">Cambiar Perfil</div>
-                    <div class="menu-desc">Cerrar sesión actual</div>
+                <a href="users.html" class="menu-card">
+                    <div class="menu-icon">👥</div>
+                    <div class="menu-title">Usuarios</div>
+                    <div class="menu-desc">Gestión de personal</div>
+                </a>
+                <div class="menu-card" onclick="openSwitchUserModal()">
+                    <div class="menu-icon">👥</div>
+                    <div class="menu-title">Cambiar Usuario</div>
+                    <div class="menu-desc">Cambiar sesión rápida</div>
+                </div>
+                <!-- Separate Logout Card -->
+                <div class="menu-card" onclick="logout()" style="background-color: #fff1f2;">
+                    <div class="menu-icon" style="color: #e11d48;">🚪</div>
+                    <div class="menu-title" style="color: #e11d48;">Cerrar Sesión</div>
+                    <div class="menu-desc" style="color: #be123c;">Salir del sistema</div>
                 </div>
             </div>
         </main>
+    </div>
+
+    <!-- Switch User Modal -->
+    <div id="switch-user-modal" class="modal-overlay">
+        <div class="modal-content modal-content-small" style="text-align: center;">
+            <div class="modal-header" style="justify-content: center; border-bottom: none; padding-bottom: 0;">
+                <h2 id="switch-modal-title" style="font-size: 1.5rem; color: var(--text-color);">Seleccionar Usuario
+                </h2>
+            </div>
+            <button class="close-btn" onclick="closeSwitchUserModal()"
+                style="position: absolute; right: 1.5rem; top: 1.5rem;">×</button>
+
+            <div class="modal-body" style="padding: 1rem;">
+
+                <!-- View 1: User Grid (Selección de camarero) -->
+                <div id="switch-view-users">
+                    <div id="switch-user-grid"
+                        style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; min-height: 300px;">
+                        <!-- Injected via JS -->
+                    </div>
+                </div>
+
+                <!-- View 2: PIN Keypad (Overlay style) -->
+                <div id="switch-view-pin" class="hidden" style="max-width: 500px; margin: 0 auto;">
+                    <h3 style="text-align: center; margin-bottom: 1rem; color: #555;">PIN para <strong
+                            id="selected-username"></strong></h3>
+
+                    <form onsubmit="handleSwitchUserLogin(event)" autocomplete="off">
+                        <!-- Input Display -->
+                        <div
+                            style="margin-bottom: 1rem; background: #eee; padding: 0.5rem; border-radius: 4px; border: 1px solid #ccc;">
+                            <input type="password" id="switch-pin-input" class="form-input"
+                                style="width: 100%; text-align: center; font-size: 2rem; letter-spacing: 0.5rem; border: none; background: transparent; height: 50px;"
+                                maxlength="4" pattern="[0-9]{4}" required autocomplete="new-password" readonly
+                                onfocus="this.removeAttribute('readonly');">
+                        </div>
+
+                        <!-- Split Layout: Keypad | Actions -->
+                        <div style="display: flex; gap: 1rem; height: 300px;">
+
+                            <!-- Numeric Pad (3 cols) -->
+                            <div style="flex: 2; display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem;">
+                                <button type="button" class="btn btn-secondary"
+                                    style="font-size: 1.5rem; font-weight: bold;" onclick="appendPin('7')">7</button>
+                                <button type="button" class="btn btn-secondary"
+                                    style="font-size: 1.5rem; font-weight: bold;" onclick="appendPin('8')">8</button>
+                                <button type="button" class="btn btn-secondary"
+                                    style="font-size: 1.5rem; font-weight: bold;" onclick="appendPin('9')">9</button>
+
+                                <button type="button" class="btn btn-secondary"
+                                    style="font-size: 1.5rem; font-weight: bold;" onclick="appendPin('4')">4</button>
+                                <button type="button" class="btn btn-secondary"
+                                    style="font-size: 1.5rem; font-weight: bold;" onclick="appendPin('5')">5</button>
+                                <button type="button" class="btn btn-secondary"
+                                    style="font-size: 1.5rem; font-weight: bold;" onclick="appendPin('6')">6</button>
+
+                                <button type="button" class="btn btn-secondary"
+                                    style="font-size: 1.5rem; font-weight: bold;" onclick="appendPin('1')">1</button>
+                                <button type="button" class="btn btn-secondary"
+                                    style="font-size: 1.5rem; font-weight: bold;" onclick="appendPin('2')">2</button>
+                                <button type="button" class="btn btn-secondary"
+                                    style="font-size: 1.5rem; font-weight: bold;" onclick="appendPin('3')">3</button>
+
+                                <button type="button" class="btn btn-secondary"
+                                    style="font-size: 1.5rem; font-weight: bold;" onclick="clearPin()">C</button>
+                                <button type="button" class="btn btn-secondary"
+                                    style="font-size: 1.5rem; font-weight: bold;" onclick="appendPin('0')">0</button>
+                                <div style="/* Empty slot where B was */"></div>
+                            </div>
+
+                            <!-- Action Buttons (1 col) -->
+                            <div style="flex: 1; display: flex; flex-direction: column; gap: 0.5rem;">
+                                <button type="submit" class="btn"
+                                    style="flex: 1; font-size: 3rem; background: #dcfce7; border: 1px solid #22c55e; color: #22c55e; display: flex; align-items: center; justify-content: center;">
+                                    ✓
+                                </button>
+                                <button type="button" class="btn" onclick="resetSwitchUser()"
+                                    style="flex: 1; font-size: 3rem; background: #fee2e2; border: 1px solid #ef4444; color: #ef4444; display: flex; align-items: center; justify-content: center;">
+                                    ✕
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="js/api.js?v=2.1"></script>

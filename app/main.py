@@ -36,6 +36,13 @@ async def lifespan(app: FastAPI):
     # --- STARTUP ---
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        # Migration hack: Add closed_by_id if not exists
+        from sqlalchemy import text
+        try:
+             await conn.execute(text("ALTER TABLE sales ADD COLUMN IF NOT EXISTS closed_by_id INTEGER REFERENCES users(id);"))
+             print("Migration: closed_by_id column checked/added.")
+        except Exception as e:
+             print(f"Migration error (harmless if column exists): {e}")
 
     print("Tablas creadas/verificadas en Neon")
     yield  # ← Aquí se entrega el control a la app
