@@ -47,3 +47,76 @@
     color: var(--text-muted);
     font-size: 0.9rem;
 }
+
+/* User Selection Modal Styles (Adaptive) */
+#switch-user-grid {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important;
+    gap: 1.5rem !important;
+    padding: 1rem;
+    min-height: 300px;
+}
+
+.user-switch-card {
+    background: var(--card-bg);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    aspect-ratio: 1;
+}
+
+.user-switch-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow);
+    border-color: var(--primary-color);
+}
+
+.user-switch-card.active {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.user-switch-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.user-switch-name {
+    font-weight: 700;
+    font-size: 1.25rem;
+    width: 100%;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 0 0.5rem;
+}
+
+.user-switch-role {
+    font-size: 0.9rem;
+    opacity: 0.8;
+    width: 100%;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Update Modal Content Large */
+.modal-content-large {
+    height: 80vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-body {
+    flex: 1;
+    overflow-y: auto;
+}

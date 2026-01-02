@@ -39,12 +39,10 @@ async function openSwitchUserModal() {
 
         const grid = document.getElementById('switch-user-grid');
         grid.innerHTML = users.map(user => `
-            <div onclick="selectSwitchUser('${user.username}')" 
-                 style="background: #fff; border: 1px solid #ccc; border-radius: 8px; 
-                        display: flex; flex-direction: column; align-items: center; justify-content: center;
-                        cursor: pointer; padding: 1rem; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05); aspect-ratio: 1;">
-                <span style="font-size: 2.5rem; margin-bottom: 0.5rem;">👤</span>
-                <div style="font-weight: 700; font-size: 1.1rem; text-align: center;">${user.username}</div>
+            <div class="user-switch-card" onclick="selectSwitchUser('${user.username}')">
+                <span class="user-switch-icon">👤</span>
+                <div class="user-switch-name" title="${user.username}">${user.username}</div>
+                <div class="user-switch-role">${user.role}</div>
             </div>
         `).join('');
 

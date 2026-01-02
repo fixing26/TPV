@@ -65,6 +65,9 @@ async function loadPos() {
 
             renderCart();
             updateSaleInfo(sale);
+            updateTableButtonUI(true); // Update button to show "Exit" state
+        } else {
+            updateTableButtonUI(false);
         }
 
     } catch (err) {
@@ -403,22 +406,31 @@ function renderOpenTablesSideList() {
 
 async function selectTableForSave(tableId, existingSaleId) {
     if (existingSaleId) {
-        // Add to existing sale
-        if (confirm("Esta mesa ya tiene una cuenta abierta. ¿Añadir productos a ella?")) {
-            // We need to switch context to that sale? Or just add lines?
-            // "Guardar en mesa" implies adding to it.
-            // We assign active saleId to state and call save logic
-            state.saleId = existingSaleId;
-            closeTableModal();
-            await saveOrder(); // Recursive call, but now state.saleId is set
-        }
+        // Add to existing sale - DIRECTLY (No confirmation asked)
+        state.saleId = existingSaleId;
+        closeTableModal();
+        await saveOrder(); // Recursive call, but now state.saleId is set
+
+        // Fix: Update Header
+        const sale = await api.getSale(state.saleId);
+        state.currentSale = sale;
+        updateSaleInfo(sale);
+        updateTableButtonUI(true);
     } else {
         // Open new sale
         try {
             const sale = await api.openSale({ table_id: tableId });
             state.saleId = sale.id;
+            // Fix: Set current sale immediately
+            state.currentSale = sale;
+
             closeTableModal();
             await saveOrder(); // Recursive call
+
+            // Fix: Update Header
+            updateSaleInfo(sale);
+            updateTableButtonUI(true);
+
         } catch (err) {
             showToast(err.message, 'error');
         }
@@ -467,7 +479,9 @@ async function processPayment(paymentMethod) {
             await api.closeSale(state.saleId, paymentMethod);
             closePaymentModal();
             showToast('Cuenta cerrada y cobrada');
-            setTimeout(() => window.location.href = 'active_orders.html', 1000);
+            // Reset state using reusable function
+            resetPosState();
+
 
         } else {
             // Direct sale
@@ -492,4 +506,105 @@ async function processPayment(paymentMethod) {
 
 function exitToIndex() {
     window.location.href = 'index.html';
+}
+
+function resetPosState() {
+    state.saleId = null;
+    state.currentSale = null;
+    state.cart = [];
+    state.numpadBuffer = '';
+
+    // clear header info
+    updateSaleInfo({});
+
+    renderCart();
+    updateNumpadDisplay();
+    updateTableButtonUI(false);
+}
+
+function handleTableButton() {
+    if (state.saleId) {
+        // We are inside a sale/table context
+        // Check if cart has items to warn user? 
+        // For now, simple exit (like "Close View"). 
+        // NOTE: This does NOT close the sale on server, just clears local view.
+
+        resetPosState();
+        showToast("Vista de mesa cerrada");
+    } else {
+        openTableModal();
+    }
+}
+
+function updateTableButtonUI(isActive) {
+    const btn = document.getElementById('table-action-btn');
+    if (!btn) return;
+
+    // We can change icon/text to indicate "Exit" vs "Table"
+    const spanText = btn.querySelector('span:last-child');
+    const spanIcon = btn.querySelector('.icon');
+
+    if (isActive) {
+        if (spanText) spanText.textContent = 'Salir Mesa';
+        if (spanIcon) spanIcon.textContent = '🚪'; // Door icon for exit
+        btn.classList.add('btn-warning'); // Make it look different
+    } else {
+        if (spanText) spanText.textContent = 'Mesa';
+        if (spanIcon) spanIcon.textContent = '🪑';
+        btn.classList.remove('btn-warning');
+    }
+}
+
+// User Selection Logic
+async function openUserSelectionModal() {
+    const modal = document.getElementById('user-selection-modal');
+    const grid = document.getElementById('user-selection-grid');
+    grid.innerHTML = '<div class="text-center">Cargando usuarios...</div>';
+    modal.classList.add('active');
+
+    try {
+        const users = await api.getUsers();
+        renderUserSelectionGrid(users);
+    } catch (err) {
+        console.error(err);
+        grid.innerHTML = '<div class="text-center error">Error al cargar usuarios</div>';
+    }
+}
+
+function closeUserSelectionModal() {
+    document.getElementById('user-selection-modal').classList.remove('active');
+}
+
+function renderUserSelectionGrid(users) {
+    const grid = document.getElementById('user-selection-grid');
+
+    // Get current user name to highlight
+    const currentUserName = document.getElementById('user-display').textContent;
+
+    grid.innerHTML = users.map(user => {
+        const isActive = user.username === currentUserName;
+        return `
+            <div class="user-card ${isActive ? 'active-user' : ''}" onclick="selectUser('${user.username}', ${user.id})">
+                <div class="user-avatar">👤</div>
+                <div class="user-name">${user.username}</div>
+                <div class="user-role">${user.role}</div>
+            </div>
+        `;
+    }).join('');
+}
+
+function selectUser(username, userId) {
+    // Update UI
+    const userDisplay = document.getElementById('user-display');
+    if (userDisplay) {
+        userDisplay.textContent = username;
+    }
+
+    // In a real app, we would switch the auth token here or prompt for PIN.
+    // For now, we just update the UI active user as requested.
+    // We could store it in state if needed for specific logic.
+    // state.activeUser = { username, id: userId }; 
+
+    closeUserSelectionModal();
+    showToast(`Usuario cambiado a ${username}`);
 }

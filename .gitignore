@@ -48,3 +48,4 @@ test_curl.ps1
 fix_db_postgres.py
 verify_save_order.py
 fix_db.py
+verify_fix.py

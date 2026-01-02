@@ -227,11 +227,8 @@ async def update_sale(
     if sale.status != "OPEN":
         raise HTTPException(status_code=400, detail="La cuenta no está abierta")
 
-    # Clear existing lines
-    for line in sale.lines:
-        await db.delete(line)
-        
-    # Add new lines
+    # Prepare new lines
+    new_lines = []
     total = 0.0
     for line_in in sale_in.lines:
         p_res = await db.execute(select(Product).where(Product.id == line_in.product_id))
@@ -243,16 +240,18 @@ async def update_sale(
         line_total = price_unit * line_in.quantity
         
         sale_line = SaleLine(
-            sale_id=sale.id,
             product_id=product.id,
             quantity=line_in.quantity,
             price_unit=price_unit,
             line_total=line_total,
         )
-        db.add(sale_line)
+        new_lines.append(sale_line)
         total += line_total
     
+    # Replace lines (cascade deletes old ones)
+    sale.lines = new_lines
     sale.total = total
+    
     db.add(sale)
     await db.commit()
     
