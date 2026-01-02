@@ -1,12 +1,4 @@
-"""
-Main application entry point.
-
-This module configures the FastAPI application, including:
-- Database connection management (lifespan).
-- CORS middleware configuration.
-- Router inclusion (Auth, Products, Sales).
-- Static file serving for the frontend.
-"""
+"""Main application entry point."""
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
@@ -16,7 +8,7 @@ import os
 
 from app.db import engine, Base
 
-# Importa todos los modelos para registrarlos
+# Register models
 from app.auth.models import User
 from app.products.models import Product, Category
 from app.sales.models import Sale, SaleLine
@@ -26,13 +18,7 @@ from app.tables.models import Table
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """
-    Lifespan context manager for the FastAPI application.
-
-    Handles startup and shutdown events.
-    - Startup: Creates database tables if they don't exist.
-    - Shutdown: Performs cleanup (currently empty).
-    """
+    """Lifespan context manager: handles startup (db) and shutdown."""
     # --- STARTUP ---
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -44,12 +30,10 @@ async def lifespan(app: FastAPI):
         except Exception as e:
              print(f"Migration error (harmless if column exists): {e}")
 
-    print("Tablas creadas/verificadas en Neon")
-    yield  # ← Aquí se entrega el control a la app
+    print("Tablas verificadas")
+    yield
 
-    # --- SHUTDOWN ---
-    # (normalmente no hacemos nada aquí, pero lo dejo para expandir)
-    print("Cerrando aplicación…")
+    # Shutdown
 
 
 app = FastAPI(title="TPV API", lifespan=lifespan)
@@ -57,7 +41,7 @@ app = FastAPI(title="TPV API", lifespan=lifespan)
 # Configurar CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # En producción, restringir esto
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -76,13 +60,12 @@ app.include_router(sales_router, prefix="/sales", tags=["Sales"])
 app.include_router(cash_closing_router, prefix="/cash-closing", tags=["Cash Closing"])
 app.include_router(tables_router, prefix="/tables", tags=["Tables"])
 
-# Servir archivos estáticos (Frontend)
-# Aseguramos que el directorio exista, aunque sea vacío por ahora
+# Static files
 static_dir = os.path.join(os.path.dirname(__file__), "static")
 if not os.path.exists(static_dir):
     os.makedirs(static_dir)
 
-# --- CACHE BUSTING / VERSIÓN AUTOMÁTICA ---
+# Versioning
 from app.core.static_handler import get_static_handler
 serve_static_html = get_static_handler(static_dir)
 
@@ -92,12 +75,8 @@ async def serve_root():
 
 @app.get("/{filename}.html", include_in_schema=False)
 async def serve_html_page(filename: str):
-    """
-    Intercepta peticiones a archivos .html para inyectar versiones (?v=timestamp)
-    en los enlaces a CSS y JS locales.
-    """
+    """Injects version params into HTML."""
     return await serve_static_html(f"{filename}.html")
 
-# Montar StaticFiles para el resto de recursos (CSS, JS, imágenes, etc.)
-# Nota: StaticFiles servirá los archivos ignorando los query params (?v=...)
+# Mount static files
 app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")

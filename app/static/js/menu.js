@@ -1,9 +1,7 @@
-/**
- * Menu Logic
- */
+
 
 document.addEventListener('DOMContentLoaded', () => {
-    checkAuth(true); // Redirect to login if not authenticated
+    checkAuth(true);
     applyRolePermissions();
 });
 
@@ -33,7 +31,8 @@ async function openSwitchUserModal() {
     try {
         const users = await api.getUsers();
 
-        // Setup Views: Show Users Grid, Hide PIN
+
+
         document.getElementById('switch-view-pin').classList.add('hidden');
         document.getElementById('switch-view-users').classList.remove('hidden');
 
@@ -66,7 +65,6 @@ function selectSwitchUser(username) {
     document.getElementById('switch-view-pin').classList.remove('hidden');
     document.getElementById('selected-username').textContent = username;
 
-    // Reset PIN input
     document.getElementById('switch-pin-input').value = '';
 }
 
@@ -78,7 +76,7 @@ function resetSwitchUser() {
     document.getElementById('switch-view-users').classList.remove('hidden');
 }
 
-// --- Keypad Logic ---
+// Keypad
 function appendPin(num) {
     const input = document.getElementById('switch-pin-input');
     if (input.value.length < 4) {

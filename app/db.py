@@ -1,9 +1,4 @@
-"""
-Database configuration module.
-
-This module handles the asynchronous database connection using SQLAlchemy.
-It defines the engine, session factory, and a dependency for getting a database session.
-"""
+"""Database configuration."""
 
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
@@ -19,11 +14,6 @@ SessionLocal = sessionmaker(
 Base = declarative_base()
 
 async def get_session() -> AsyncSession:
-    """
-    Dependency to get an asynchronous database session.
-
-    Yields:
-        AsyncSession: A SQLAlchemy asynchronous session.
-    """
+    """Yields async database session."""
     async with SessionLocal() as session:
         yield session

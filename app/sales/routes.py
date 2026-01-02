@@ -1,8 +1,4 @@
-"""
-Sales routes module.
-
-Handles creation and retrieval of sales (tickets).
-"""
+"""Sales routes."""
 
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -27,14 +23,11 @@ async def create_sale(
     db: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    """
-    Create a new sale (IMMEDIATE CLOSE).
-    Legacy endpoint for direct sales without table/account management.
-    """
+    """Create new sale (Immediate Close)."""
     if not sale_in.lines:
         raise HTTPException(status_code=400, detail="La venta debe tener al menos una línea.")
 
-    # Create CLOSED sale
+
     sale = Sale(
         total=0.0,
         payment_method=sale_in.payment_method,
@@ -68,7 +61,7 @@ async def create_sale(
     db.add(sale)
     await db.commit()
     
-    # Reload with full options
+    # Reload
     result = await db.execute(
         select(Sale)
         .options(
@@ -87,9 +80,7 @@ async def open_account(
     db: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    """
-    Open a new account (running tab), optionally assigned to a table.
-    """
+    """Open new account/table."""
     # Check if table exists and is free if provided
     if account_in.table_id:
         # Check if table exists
@@ -135,9 +126,7 @@ async def open_account(
 async def list_active_accounts(
     db: AsyncSession = Depends(get_session)
 ):
-    """
-    List all OPEN accounts/tables.
-    """
+    """List OPEN accounts."""
     result = await db.execute(
         select(Sale)
         .options(
@@ -157,9 +146,7 @@ async def add_lines_to_account(
     lines_in: List[SaleLineCreate],
     db: AsyncSession = Depends(get_session)
 ):
-    """
-    Add items to an existing OPEN account.
-    """
+    """Add items to account."""
     result = await db.execute(select(Sale).where(Sale.id == sale_id))
     sale = result.scalar_one_or_none()
     
@@ -213,10 +200,7 @@ async def update_sale(
     sale_in: SaleUpdate,
     db: AsyncSession = Depends(get_session)
 ):
-    """
-    Update a sale (replace lines).
-    Used for full ticket editing.
-    """
+    """Update sale (replace lines)."""
     # Load with collection to cleanly delete/update
     result = await db.execute(select(Sale).options(selectinload(Sale.lines)).where(Sale.id == sale_id))
     sale = result.scalar_one_or_none()
@@ -275,9 +259,7 @@ async def close_account(
     db: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    """
-    Close (checkout) an account.
-    """
+    """Close (checkout) account."""
     result = await db.execute(
         select(Sale)
         .where(Sale.id == sale_id)
@@ -311,9 +293,7 @@ async def close_account(
 
 @router.get("/", response_model=List[SaleOut])
 async def list_sales(db: AsyncSession = Depends(get_session),skip: int = 0,limit: int = 100,):
-    """
-    List sales with pagination.
-    """
+    """List sales."""
     result = await db.execute(
         select(Sale)
         .options(
@@ -330,9 +310,7 @@ async def list_sales(db: AsyncSession = Depends(get_session),skip: int = 0,limit
 
 @router.get("/{sale_id}", response_model=SaleOut)
 async def get_sale(sale_id: int,db: AsyncSession = Depends(get_session),):
-    """
-    Get a specific sale by ID.
-    """
+    """Get sale by ID."""
     result = await db.execute(
         select(Sale)
         .options(

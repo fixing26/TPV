@@ -1,6 +1,4 @@
-/**
- * POS Logic
- */
+
 
 
 const state = {
@@ -10,17 +8,16 @@ const state = {
     tables: [],
     activeSales: [],
     selectedCategoryId: null,
-    saleId: null, // If null, it's a direct immediate sale
+    saleId: null,
     currentSale: null,
     currentSale: null,
-    selectedCartIndex: null, // For selecting a line to modify directly
-    numpadBuffer: '' // New: Buffer for numpad input
+    selectedCartIndex: null,
+    numpadBuffer: ''
 };
 
 document.addEventListener('DOMContentLoaded', () => {
     checkAuth(true);
 
-    // Check URL params
     const urlParams = new URLSearchParams(window.location.search);
     const saleId = urlParams.get('sale_id');
     if (saleId) state.saleId = parseInt(saleId);
@@ -52,11 +49,9 @@ async function loadPos() {
             const sale = await api.getSale(state.saleId);
             state.currentSale = sale;
 
-            // Populate cart with existing lines for full editing
             state.cart = sale.lines.map(line => {
                 const product = state.products.find(p => p.id === line.product_id);
-                // If product not found (e.g. deleted), we might have issues. 
-                // For now assuming active products.
+
                 return {
                     product: product || { id: line.product_id, name: 'Producto Desconocido', price: line.price_unit },
                     quantity: line.quantity
@@ -65,7 +60,8 @@ async function loadPos() {
 
             renderCart();
             updateSaleInfo(sale);
-            updateTableButtonUI(true); // Update button to show "Exit" state
+            updateSaleInfo(sale);
+            updateTableButtonUI(true);
         } else {
             updateTableButtonUI(false);
         }
@@ -77,7 +73,7 @@ async function loadPos() {
 }
 
 function updateSaleInfo(sale) {
-    // Classic POS Header Update
+
     const tableNameEl = document.getElementById('header-table-name');
     if (tableNameEl) {
         let tableName = 'Sin Mesa';
@@ -140,7 +136,8 @@ function addToCart(productId) {
     let quantity = 1;
     if (state.numpadBuffer) {
         quantity = parseInt(state.numpadBuffer);
-        state.numpadBuffer = ''; // Clear buffer
+        quantity = parseInt(state.numpadBuffer);
+        state.numpadBuffer = '';
         updateNumpadDisplay();
     }
 
@@ -188,7 +185,8 @@ function renderCart() {
 // Selection Logic
 function selectCartItem(index) {
     state.selectedCartIndex = index;
-    renderCart(); // Re-render to show selection highlight
+    state.selectedCartIndex = index;
+    renderCart();
 }
 
 function removeSelectedItem() {
@@ -203,8 +201,8 @@ function removeSelectedItem() {
 function numpadInput(key) {
     if (key === 'C') {
         state.numpadBuffer = '';
+
     } else {
-        // Append to buffer usually, but verify length
         if (state.numpadBuffer.length < 5) {
             state.numpadBuffer += key.toString();
         }
@@ -213,24 +211,9 @@ function numpadInput(key) {
     updateNumpadDisplay();
 
     // If a cart item is selected, we MIGHT update it immediately?
-    // User request: "ver que numero se esta cargando en el teclado" -> implies buffer preference
-    // "cuando le de al producto este sea con el numero" -> implies buffer usage for ADD
-    // If we want to EDIT selected item, maybe we need an "ENTER" button or direct update?
-    // Let's adopt this: If item selected, numpad updates it directly? 
-    // OR: Numpad fills buffer, then we need a button to apply?
-    // User didn't specify for edit. Let's keep ADD logic as priority.
-    // However, if we click a line, maybe we should auto-fill buffer with that qty?
-    // For now, let's keep buffer independent for ADDING.
-    // If user wants to edit qty of selected line, maybe "Enter" or "Update"?
-
-    // Legacy support: If item IS selected, update it directly? 
-    // "dale un espacio... para ver que numero se esta cargando" suggest typing BEFORE action.
+    // If item selected, numpad updates it directly? 
     if (state.selectedCartIndex !== null && state.cart[state.selectedCartIndex]) {
-        // If we implement 'type to edit selected', we should probably do it here.
-        // But user specifically asked for buffer behavior for ADDING.
-        // Let's stick to Buffer -> Display.
-        // If users clicks product -> Add (Buffer)
-        // If user wants to change qty of existing... maybe we add a button "Qty"?
+        // Future: implement type to edit selected
     }
 }
 
@@ -239,10 +222,9 @@ function updateNumpadDisplay() {
     if (el) el.textContent = state.numpadBuffer;
 }
 
-// New Modal Logic for Open Tables List
 function toggleOpenTablesList() {
     const modal = document.getElementById('open-tables-modal');
-    modal.classList.add('active'); // Use standard overlay logic
+    modal.classList.add('active');
     renderOpenTablesModalContent();
 }
 
@@ -279,82 +261,79 @@ async function saveOrder() {
     }
 
     if (state.saleId) {
-        // Active sale exists, add to it
-        await addToActiveSale(state.saleId);
-    } else {
-        // No active sale, prompt for table
-        openTableModal();
-    }
-}
-
-async function addToActiveSale(saleId, redirect = true) {
-    // Logic changed: Now we REPLACE the sale content with current cart to support edits/removals
-    const lines = state.cart.map(item => ({
-        product_id: item.product.id,
-        quantity: item.quantity
-    }));
-
-    // Schema expects payment_method? strict check? Schema says optional.
-    const saleData = {
-        lines: lines
-    };
-
-    try {
-        await api.updateSale(saleId, saleData);
-        showToast('Pedido actualizado');
-        // state.cart = []; // Do NOT clear cart if we stay, but if we redirect it doesn't matter.
-        // If we stay, active editing implies cart should remain?
-        // Actually, if we are in "Edit Mode", the cart IS the ticket.
-        // So clearing it means clearing the ticket for the user visually unless we re-fetch.
-
-        if (redirect) {
-            // Stay on page as requested
-            const sale = await api.getSale(saleId);
-            state.currentSale = sale;
-            updateSaleInfo(sale);
+        if (state.saleId) {
+            await addToActiveSale(state.saleId);
+        } else {
+            // No active sale, prompt for table
+            openTableModal();
         }
-    } catch (err) {
-        showToast(err.message, 'error');
     }
-}
 
-// Table Selection Logic
-let availableTables = [];
-let activeSalesForSelection = [];
+    async function addToActiveSale(saleId, redirect = true) {
+        const lines = state.cart.map(item => ({
+            product_id: item.product.id,
+            quantity: item.quantity
+        }));
 
-async function openTableModal() {
-    const modal = document.getElementById('table-selection-modal');
-    const grid = document.getElementById('table-selection-grid');
-    grid.innerHTML = '<div class="text-center">Cargando mesas...</div>';
-    modal.classList.add('active'); // Assuming shared.css has .modal-overlay.active
+        // Schema expects payment_method? strict check? Schema says optional.
+        const saleData = {
+            lines: lines
+        };
 
-    try {
-        const [tables, activeSales] = await Promise.all([
-            api.getTables(),
-            api.getActiveSales()
-        ]);
-        availableTables = tables;
-        activeSalesForSelection = activeSales;
-        renderTableSelection();
-    } catch (err) {
-        grid.innerHTML = `<div class="text-center error">Error al cargar mesas: ${err.message}</div>`;
+        try {
+            await api.updateSale(saleId, saleData);
+            showToast('Pedido actualizado');
+            showToast('Pedido actualizado');
+
+
+            if (redirect) {
+                // Stay on page as requested
+                const sale = await api.getSale(saleId);
+                state.currentSale = sale;
+                updateSaleInfo(sale);
+            }
+        } catch (err) {
+            showToast(err.message, 'error');
+        }
     }
-}
 
-function closeTableModal() {
-    document.getElementById('table-selection-modal').classList.remove('active');
-}
+    // Table Selection Logic
+    let availableTables = [];
+    let activeSalesForSelection = [];
 
-function renderTableSelection() {
-    const grid = document.getElementById('table-selection-grid');
-    grid.innerHTML = availableTables.map(table => {
-        const sale = activeSalesForSelection.find(s => s.table_id === table.id);
-        const isBusy = !!sale;
-        const total = sale ? sale.total.toFixed(2) + '€' : 'Libre';
-        const statusClass = isBusy ? 'status-busy' : 'status-free';
+    async function openTableModal() {
+        const modal = document.getElementById('table-selection-modal');
+        const grid = document.getElementById('table-selection-grid');
+        grid.innerHTML = '<div class="text-center">Cargando mesas...</div>';
+        modal.classList.add('active'); // Assuming shared.css has .modal-overlay.active
 
-        // Simplified table card for modal
-        return `
+        try {
+            const [tables, activeSales] = await Promise.all([
+                api.getTables(),
+                api.getActiveSales()
+            ]);
+            availableTables = tables;
+            activeSalesForSelection = activeSales;
+            renderTableSelection();
+        } catch (err) {
+            grid.innerHTML = `<div class="text-center error">Error al cargar mesas: ${err.message}</div>`;
+        }
+    }
+
+    function closeTableModal() {
+        document.getElementById('table-selection-modal').classList.remove('active');
+    }
+
+    function renderTableSelection() {
+        const grid = document.getElementById('table-selection-grid');
+        grid.innerHTML = availableTables.map(table => {
+            const sale = activeSalesForSelection.find(s => s.table_id === table.id);
+            const isBusy = !!sale;
+            const total = sale ? sale.total.toFixed(2) + '€' : 'Libre';
+            const statusClass = isBusy ? 'status-busy' : 'status-free';
+
+            // Simplified table card for modal
+            return `
             <div class="table-card ${statusClass}" 
                  onclick="selectTableForSave(${table.id}, ${isBusy ? (sale ? sale.id : 'null') : 'null'})">
                 <div class="table-icon">🪑</div>
@@ -363,34 +342,34 @@ function renderTableSelection() {
                 ${isBusy ? `<div class="table-total">${total}</div>` : ''}
             </div>
         `;
-    }).join('');
+        }).join('');
 
-    // Grid styling is now handled by active_orders.css included in pos.html
-    // but we can ensure the container has the class
-    grid.className = 'tables-grid';
-    grid.style.display = 'grid'; // Ensure grid display if css fails or overrides
-    // Remove manual style injections that conflict with css class
-    grid.style.gridTemplateColumns = '';
-    grid.style.gap = '';
-}
-
-function renderOpenTablesSideList() {
-    const container = document.getElementById('open-tables-list');
-    if (!container) return; // Guard clause
-
-    // Filter active sales that are assigned to a table
-    const tableSales = state.activeSales.filter(s => s.table_id);
-
-    if (tableSales.length === 0) {
-        container.innerHTML = '<div style="color: var(--text-muted); font-size: 0.9rem; font-style: italic;">No hay mesas abiertas</div>';
-        return;
+        // Grid styling is now handled by active_orders.css included in pos.html
+        // but we can ensure the container has the class
+        grid.className = 'tables-grid';
+        grid.style.display = 'grid'; // Ensure grid display if css fails or overrides
+        // Remove manual style injections that conflict with css class
+        grid.style.gridTemplateColumns = '';
+        grid.style.gap = '';
     }
 
-    container.innerHTML = tableSales.map(sale => {
-        const table = state.tables.find(t => t.id === sale.table_id);
-        const tableName = table ? table.name : `Mesa #${sale.table_id} `;
+    function renderOpenTablesSideList() {
+        const container = document.getElementById('open-tables-list');
+        if (!container) return; // Guard clause
 
-        return `
+        // Filter active sales that are assigned to a table
+        const tableSales = state.activeSales.filter(s => s.table_id);
+
+        if (tableSales.length === 0) {
+            container.innerHTML = '<div style="color: var(--text-muted); font-size: 0.9rem; font-style: italic;">No hay mesas abiertas</div>';
+            return;
+        }
+
+        container.innerHTML = tableSales.map(sale => {
+            const table = state.tables.find(t => t.id === sale.table_id);
+            const tableName = table ? table.name : `Mesa #${sale.table_id} `;
+
+            return `
             <div onclick="window.location.href='pos.html?sale_id=${sale.id}'" 
                  style="background: white; border: 1px solid #ddd; border-radius: 8px; padding: 0.75rem; 
                         cursor: pointer; transition: background 0.2s; display: flex; justify-content: space-between; align-items: center;">
@@ -401,210 +380,201 @@ function renderOpenTablesSideList() {
                 <div style="font-weight: 600; color: var(--primary-color);">${sale.total.toFixed(2)}€</div>
             </div>
         `;
-    }).join('');
-}
+        }).join('');
+    }
 
-async function selectTableForSave(tableId, existingSaleId) {
-    if (existingSaleId) {
-        // Add to existing sale - DIRECTLY (No confirmation asked)
-        state.saleId = existingSaleId;
-        closeTableModal();
-        await saveOrder(); // Recursive call, but now state.saleId is set
-
-        // Fix: Update Header
-        const sale = await api.getSale(state.saleId);
-        state.currentSale = sale;
-        updateSaleInfo(sale);
-        updateTableButtonUI(true);
-    } else {
-        // Open new sale
-        try {
-            const sale = await api.openSale({ table_id: tableId });
-            state.saleId = sale.id;
-            // Fix: Set current sale immediately
-            state.currentSale = sale;
-
+    async function selectTableForSave(tableId, existingSaleId) {
+        if (existingSaleId) {
+            // Add to existing sale - DIRECTLY (No confirmation asked)
+            state.saleId = existingSaleId;
             closeTableModal();
-            await saveOrder(); // Recursive call
+            await saveOrder(); // Recursive call, but now state.saleId is set
 
             // Fix: Update Header
+            const sale = await api.getSale(state.saleId);
+            state.currentSale = sale;
             updateSaleInfo(sale);
             updateTableButtonUI(true);
+        } else {
+            // Open new sale
+            try {
+                const sale = await api.openSale({ table_id: tableId });
+                state.saleId = sale.id;
+                // Fix: Set current sale immediately
+                state.currentSale = sale;
 
-        } catch (err) {
-            showToast(err.message, 'error');
+                closeTableModal();
+                await saveOrder(); // Recursive call
+
+                // Fix: Update Header
+                updateSaleInfo(sale);
+                updateTableButtonUI(true);
+
+            } catch (err) {
+                showToast(err.message, 'error');
+            }
         }
     }
-}
 
-function openPaymentModal() {
-    // If empty cart and no open sale, ignore
-    if (state.cart.length === 0 && !state.saleId) return;
+    function openPaymentModal() {
+        if (state.cart.length === 0 && !state.saleId) return;
 
-    // Calculate total to show
-    // Should be consistent with what's on screen
-    const currentTotal = parseFloat(document.getElementById('cart-total').textContent.replace('€', ''));
+        const currentTotal = parseFloat(document.getElementById('cart-total').textContent.replace('€', ''));
 
-    // If we have an active sale (server side), the local cart might be partial updates?
-    // But `state.activeSales` has the server total? 
-    // Actually `renderCart` calculates total from `state.cart`.
-    // If we are in edit mode, `state.cart` represents the full state.
+        // If we have an active sale (server side), the local cart might be partial updates?
+        // But `state.activeSales` has the server total? 
+        // Actually `renderCart` calculates total from `state.cart`.
+        // If we are in edit mode, `state.cart` represents the full state.
 
-    document.getElementById('payment-total-display').textContent = currentTotal.toFixed(2) + '€';
+        document.getElementById('payment-total-display').textContent = currentTotal.toFixed(2) + '€';
 
-    const modal = document.getElementById('payment-modal');
-    modal.classList.add('active');
-}
+        const modal = document.getElementById('payment-modal');
+        modal.classList.add('active');
+    }
 
-function closePaymentModal() {
-    document.getElementById('payment-modal').classList.remove('active');
-}
+    function closePaymentModal() {
+        document.getElementById('payment-modal').classList.remove('active');
+    }
 
-async function processPayment(paymentMethod) {
-
-    // Original Checkout Logic moved here
-    try {
-        if (state.saleId) {
-            // Update sale with current cart content (Sync before close)
-            const lines = state.cart.map(item => ({
-                product_id: item.product.id,
-                quantity: item.quantity
-            }));
-
-            if (state.cart.length > 0) {
-                await api.updateSale(state.saleId, { lines: lines });
-            }
-
-            // Close sale
-            await api.closeSale(state.saleId, paymentMethod);
-            closePaymentModal();
-            showToast('Cuenta cerrada y cobrada');
-            // Reset state using reusable function
-            resetPosState();
+    async function processPayment(paymentMethod) {
 
 
-        } else {
-            // Direct sale
-            const saleData = {
-                payment_method: paymentMethod,
-                lines: state.cart.map(item => ({
+
+        try {
+            if (state.saleId) {
+                // Update sale with current cart content (Sync before close)
+                const lines = state.cart.map(item => ({
                     product_id: item.product.id,
                     quantity: item.quantity
-                }))
-            };
-            await api.createSale(saleData);
-            closePaymentModal();
-            showToast('Venta realizada con éxito');
-            state.cart = [];
-            state.numpadBuffer = '';
-            renderCart();
-            updateNumpadDisplay();
+                }));
+
+                if (state.cart.length > 0) {
+                    await api.updateSale(state.saleId, { lines: lines });
+                }
+
+                // Close sale
+                await api.closeSale(state.saleId, paymentMethod);
+                closePaymentModal();
+                showToast('Cuenta cerrada y cobrada');
+                // Reset state using reusable function
+                resetPosState();
+
+
+            } else {
+                // Direct sale
+                const saleData = {
+                    payment_method: paymentMethod,
+                    lines: state.cart.map(item => ({
+                        product_id: item.product.id,
+                        quantity: item.quantity
+                    }))
+                };
+                await api.createSale(saleData);
+                closePaymentModal();
+                showToast('Venta realizada con éxito');
+                state.cart = [];
+                state.numpadBuffer = '';
+                renderCart();
+                updateNumpadDisplay();
+            }
+        } catch (err) {
         }
-    } catch (err) {
     }
-}
 
-function exitToIndex() {
-    window.location.href = 'index.html';
-}
-
-function resetPosState() {
-    state.saleId = null;
-    state.currentSale = null;
-    state.cart = [];
-    state.numpadBuffer = '';
-
-    // clear header info
-    updateSaleInfo({});
-
-    renderCart();
-    updateNumpadDisplay();
-    updateTableButtonUI(false);
-}
-
-function handleTableButton() {
-    if (state.saleId) {
-        // We are inside a sale/table context
-        // Check if cart has items to warn user? 
-        // For now, simple exit (like "Close View"). 
-        // NOTE: This does NOT close the sale on server, just clears local view.
-
-        resetPosState();
-        showToast("Vista de mesa cerrada");
-    } else {
-        openTableModal();
+    function exitToIndex() {
+        window.location.href = 'index.html';
     }
-}
 
-function updateTableButtonUI(isActive) {
-    const btn = document.getElementById('table-action-btn');
-    if (!btn) return;
+    function resetPosState() {
+        state.saleId = null;
+        state.currentSale = null;
+        state.cart = [];
+        state.numpadBuffer = '';
 
-    // We can change icon/text to indicate "Exit" vs "Table"
-    const spanText = btn.querySelector('span:last-child');
-    const spanIcon = btn.querySelector('.icon');
+        // clear header info
+        updateSaleInfo({});
 
-    if (isActive) {
-        if (spanText) spanText.textContent = 'Salir Mesa';
-        if (spanIcon) spanIcon.textContent = '🚪'; // Door icon for exit
-        btn.classList.add('btn-warning'); // Make it look different
-    } else {
-        if (spanText) spanText.textContent = 'Mesa';
-        if (spanIcon) spanIcon.textContent = '🪑';
-        btn.classList.remove('btn-warning');
+        renderCart();
+        updateNumpadDisplay();
+        updateTableButtonUI(false);
     }
-}
 
-// User Selection Logic
-async function openUserSelectionModal() {
-    const modal = document.getElementById('user-selection-modal');
-    const grid = document.getElementById('user-selection-grid');
-    grid.innerHTML = '<div class="text-center">Cargando usuarios...</div>';
-    modal.classList.add('active');
-
-    try {
-        const users = await api.getUsers();
-        renderUserSelectionGrid(users);
-    } catch (err) {
-        console.error(err);
-        grid.innerHTML = '<div class="text-center error">Error al cargar usuarios</div>';
+    function handleTableButton() {
+        if (state.saleId) {
+            resetPosState();
+            showToast("Vista de mesa cerrada");
+        } else {
+            openTableModal();
+        }
     }
-}
 
-function closeUserSelectionModal() {
-    document.getElementById('user-selection-modal').classList.remove('active');
-}
+    function updateTableButtonUI(isActive) {
+        const btn = document.getElementById('table-action-btn');
+        if (!btn) return;
 
-function renderUserSelectionGrid(users) {
-    const grid = document.getElementById('user-selection-grid');
+        // We can change icon/text to indicate "Exit" vs "Table"
+        const spanText = btn.querySelector('span:last-child');
+        const spanIcon = btn.querySelector('.icon');
 
-    // Get current user name to highlight
-    const currentUserName = document.getElementById('user-display').textContent;
+        if (isActive) {
+            if (spanText) spanText.textContent = 'Salir Mesa';
+            if (spanIcon) spanIcon.textContent = '🚪'; // Door icon for exit
+            btn.classList.add('btn-warning'); // Make it look different
+        } else {
+            if (spanText) spanText.textContent = 'Mesa';
+            if (spanIcon) spanIcon.textContent = '🪑';
+            btn.classList.remove('btn-warning');
+        }
+    }
 
-    grid.innerHTML = users.map(user => {
-        const isActive = user.username === currentUserName;
-        return `
+    // User Selection Logic
+    async function openUserSelectionModal() {
+        const modal = document.getElementById('user-selection-modal');
+        const grid = document.getElementById('user-selection-grid');
+        grid.innerHTML = '<div class="text-center">Cargando usuarios...</div>';
+        modal.classList.add('active');
+
+        try {
+            const users = await api.getUsers();
+            renderUserSelectionGrid(users);
+        } catch (err) {
+            console.error(err);
+            grid.innerHTML = '<div class="text-center error">Error al cargar usuarios</div>';
+        }
+    }
+
+    function closeUserSelectionModal() {
+        document.getElementById('user-selection-modal').classList.remove('active');
+    }
+
+    function renderUserSelectionGrid(users) {
+        const grid = document.getElementById('user-selection-grid');
+
+        // Get current user name to highlight
+        const currentUserName = document.getElementById('user-display').textContent;
+
+        grid.innerHTML = users.map(user => {
+            const isActive = user.username === currentUserName;
+            return `
             <div class="user-card ${isActive ? 'active-user' : ''}" onclick="selectUser('${user.username}', ${user.id})">
                 <div class="user-avatar">👤</div>
                 <div class="user-name">${user.username}</div>
                 <div class="user-role">${user.role}</div>
             </div>
         `;
-    }).join('');
-}
-
-function selectUser(username, userId) {
-    // Update UI
-    const userDisplay = document.getElementById('user-display');
-    if (userDisplay) {
-        userDisplay.textContent = username;
+        }).join('');
     }
 
-    // In a real app, we would switch the auth token here or prompt for PIN.
-    // For now, we just update the UI active user as requested.
-    // We could store it in state if needed for specific logic.
-    // state.activeUser = { username, id: userId }; 
+    function selectUser(username, userId) {
+        // Update UI
+        const userDisplay = document.getElementById('user-display');
+        if (userDisplay) {
+            userDisplay.textContent = username;
+        }
 
-    closeUserSelectionModal();
-    showToast(`Usuario cambiado a ${username}`);
+        // For now, we just update the UI active user as requested. 
+
+        closeUserSelectionModal();
+        showToast(`Usuario cambiado a ${username}`);
+    }
 }

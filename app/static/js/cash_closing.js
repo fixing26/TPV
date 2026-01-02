@@ -1,9 +1,7 @@
-/**
- * Cash Closing Logic
- */
+
 
 document.addEventListener('DOMContentLoaded', () => {
-    checkAuth(true); // Ensure user is logged in
+    checkAuth(true);
 });
 
 
@@ -19,12 +17,7 @@ async function handleClosing() {
     }
 }
 
-// function confirmDelete() {
-//     if (!confirm("¿ESTÁS SEGURO?\n\nEsta acción borrará todas las ventas actuales de la base de datos.\nNo se puede deshacer.")) {
-//         return;
-//     }
-//     executeDelete();
-// }
+
 
 function openConfirmModal() {
     document.getElementById('confirm-modal').classList.add('active');
