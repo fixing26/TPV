@@ -15,10 +15,14 @@ from ..db import get_session
 
 router = APIRouter()
 
+from uuid import uuid4
+
+# ...
+
 @router.post("/register", response_model=UserOut)
 async def register(user_in: UserCreate, db: AsyncSession = Depends(get_session)):
     """
-    Register a new user.
+    Register a new user (Creates a NEW TENANT).
     """
     try:
         result = await db.execute(select(User).where(User.username == user_in.username))
@@ -26,10 +30,13 @@ async def register(user_in: UserCreate, db: AsyncSession = Depends(get_session))
         if existing:
             raise HTTPException(status_code=400, detail="Usuario ya existe")
 
+        new_tenant_id = str(uuid4()) # Generate new UUID for the company
+
         user = User(
             username=user_in.username,
             hashed_password=get_password_hash(user_in.password),
-            role=user_in.role
+            role="admin", # First user is always admin
+            tenant_id=new_tenant_id
         )
         db.add(user)
         await db.commit()
@@ -52,13 +59,48 @@ async def login(user_in: UserCreate, db: AsyncSession = Depends(get_session)):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Credenciales incorrectas",
         )
-    access_token = create_access_token({"sub": str(user.id), "role": user.role})
-    return Token(access_token=access_token, role=user.role)
+    access_token = create_access_token({"sub": str(user.id), "role": user.role, "tenant_id": user.tenant_id})
+    return Token(access_token=access_token, role=user.role, tenant_id=user.tenant_id)
+
+from .dependencies import get_current_user
+# ...
+
+@router.post("/create_user", response_model=UserOut)
+async def create_user(
+    user_in: UserCreate, 
+    db: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Create a new user within the SAME TENANT (Internal use by Admin).
+    """
+    if current_user.role != "admin":
+         raise HTTPException(status_code=403, detail="Solo administradores pueden crear usuarios")
+
+    # Check existence
+    result = await db.execute(select(User).where(User.username == user_in.username))
+    if result.scalar_one_or_none():
+         raise HTTPException(status_code=400, detail="Usuario ya existe")
+
+    new_user = User(
+        username=user_in.username,
+        hashed_password=get_password_hash(user_in.password),
+        role=user_in.role, # Can be cashier or admin
+        tenant_id=current_user.tenant_id # Inherit Tenant ID
+    )
+    db.add(new_user)
+    await db.commit()
+    await db.refresh(new_user)
+    return new_user
+
 
 @router.get("/", response_model=list[UserOut])
-async def get_users(db: AsyncSession = Depends(get_session)):
-    """List all users."""
-    result = await db.execute(select(User))
+async def get_users(
+    db: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    """List all users of the current tenant."""
+    result = await db.execute(select(User).where(User.tenant_id == current_user.tenant_id))
     return result.scalars().all()
 
 from sqlalchemy import update

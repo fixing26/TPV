@@ -16,6 +16,7 @@ class CashClosing(Base):
     id = Column(Integer, primary_key=True, index=True)
     closing_type = Column(String(1), nullable=False)
     user_id = Column(Integer, nullable=True) # Making nullable for now as auth might not be strict
+    tenant_id = Column(String, nullable=False, index=True)
 
     # Timestamps
     date = Column(Float, default=lambda: datetime.now().timestamp())

@@ -15,10 +15,11 @@ class UserCreate(UserBase):
     password: str
     role: str = "cashier"
 
-class UserOut(UserBase):
-    """Schema for user response (excluding password)."""
+class UserOut(BaseModel):
     id: int
+    username: str
     role: str
+    tenant_id: str
 
     class Config:
         from_attributes = True
@@ -28,4 +29,4 @@ class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
     role: str
-
+    tenant_id: str | None = None

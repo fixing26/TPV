@@ -415,166 +415,168 @@ async function saveOrder() {
             }
         }
     }
+}
 
-    function openPaymentModal() {
-        if (state.cart.length === 0 && !state.saleId) return;
+function openPaymentModal() {
+    if (state.cart.length === 0 && !state.saleId) return;
 
-        const currentTotal = parseFloat(document.getElementById('cart-total').textContent.replace('€', ''));
+    const currentTotal = parseFloat(document.getElementById('cart-total').textContent.replace('€', ''));
 
-        // If we have an active sale (server side), the local cart might be partial updates?
-        // But `state.activeSales` has the server total? 
-        // Actually `renderCart` calculates total from `state.cart`.
-        // If we are in edit mode, `state.cart` represents the full state.
+    // If we have an active sale (server side), the local cart might be partial updates?
+    // But `state.activeSales` has the server total? 
+    // Actually `renderCart` calculates total from `state.cart`.
+    // If we are in edit mode, `state.cart` represents the full state.
 
-        document.getElementById('payment-total-display').textContent = currentTotal.toFixed(2) + '€';
+    document.getElementById('payment-total-display').textContent = currentTotal.toFixed(2) + '€';
 
-        const modal = document.getElementById('payment-modal');
-        modal.classList.add('active');
-    }
+    const modal = document.getElementById('payment-modal');
+    modal.classList.add('active');
+}
 
-    function closePaymentModal() {
-        document.getElementById('payment-modal').classList.remove('active');
-    }
+function closePaymentModal() {
+    document.getElementById('payment-modal').classList.remove('active');
+}
 
-    async function processPayment(paymentMethod) {
+async function processPayment(paymentMethod) {
 
 
 
-        try {
-            if (state.saleId) {
-                // Update sale with current cart content (Sync before close)
-                const lines = state.cart.map(item => ({
+    try {
+        if (state.saleId) {
+            // Update sale with current cart content (Sync before close)
+            const lines = state.cart.map(item => ({
+                product_id: item.product.id,
+                quantity: item.quantity
+            }));
+
+            if (state.cart.length > 0) {
+                await api.updateSale(state.saleId, { lines: lines });
+            }
+
+            // Close sale
+            await api.closeSale(state.saleId, paymentMethod);
+            closePaymentModal();
+            showToast('Cuenta cerrada y cobrada');
+            // Reset state using reusable function
+            resetPosState();
+
+
+        } else {
+            // Direct sale
+            const saleData = {
+                payment_method: paymentMethod,
+                lines: state.cart.map(item => ({
                     product_id: item.product.id,
                     quantity: item.quantity
-                }));
-
-                if (state.cart.length > 0) {
-                    await api.updateSale(state.saleId, { lines: lines });
-                }
-
-                // Close sale
-                await api.closeSale(state.saleId, paymentMethod);
-                closePaymentModal();
-                showToast('Cuenta cerrada y cobrada');
-                // Reset state using reusable function
-                resetPosState();
-
-
-            } else {
-                // Direct sale
-                const saleData = {
-                    payment_method: paymentMethod,
-                    lines: state.cart.map(item => ({
-                        product_id: item.product.id,
-                        quantity: item.quantity
-                    }))
-                };
-                await api.createSale(saleData);
-                closePaymentModal();
-                showToast('Venta realizada con éxito');
-                state.cart = [];
-                state.numpadBuffer = '';
-                renderCart();
-                updateNumpadDisplay();
-            }
-        } catch (err) {
+                }))
+            };
+            await api.createSale(saleData);
+            closePaymentModal();
+            showToast('Venta realizada con éxito');
+            state.cart = [];
+            state.numpadBuffer = '';
+            renderCart();
+            updateNumpadDisplay();
         }
+    } catch (err) {
+        console.error(err);
+        showToast(err.message || "Error en el pago", 'error');
     }
+}
 
-    function exitToIndex() {
-        window.location.href = 'index.html';
+function exitPos() {
+    window.location.href = 'menu.html';
+}
+window.exitPos = exitPos;
+
+function resetPosState() {
+    state.saleId = null;
+    state.currentSale = null;
+    state.cart = [];
+    state.numpadBuffer = '';
+
+    // clear header info
+    updateSaleInfo({});
+
+    renderCart();
+    updateNumpadDisplay();
+    updateTableButtonUI(false);
+}
+
+function handleTableButton() {
+    if (state.saleId) {
+        resetPosState();
+        showToast("Vista de mesa cerrada");
+    } else {
+        openTableModal();
     }
+}
 
-    function resetPosState() {
-        state.saleId = null;
-        state.currentSale = null;
-        state.cart = [];
-        state.numpadBuffer = '';
+function updateTableButtonUI(isActive) {
+    const btn = document.getElementById('table-action-btn');
+    if (!btn) return;
 
-        // clear header info
-        updateSaleInfo({});
+    // We can change icon/text to indicate "Exit" vs "Table"
+    const spanText = btn.querySelector('span:last-child');
+    const spanIcon = btn.querySelector('.icon');
 
-        renderCart();
-        updateNumpadDisplay();
-        updateTableButtonUI(false);
+    if (isActive) {
+        if (spanText) spanText.textContent = 'Salir Mesa';
+        if (spanIcon) spanIcon.textContent = '🚪'; // Door icon for exit
+        btn.classList.add('btn-warning'); // Make it look different
+    } else {
+        if (spanText) spanText.textContent = 'Mesa';
+        if (spanIcon) spanIcon.textContent = '🪑';
+        btn.classList.remove('btn-warning');
     }
+}
 
-    function handleTableButton() {
-        if (state.saleId) {
-            resetPosState();
-            showToast("Vista de mesa cerrada");
-        } else {
-            openTableModal();
-        }
+// User Selection Logic
+async function openUserSelectionModal() {
+    const modal = document.getElementById('user-selection-modal');
+    const grid = document.getElementById('user-selection-grid');
+    grid.innerHTML = '<div class="text-center">Cargando usuarios...</div>';
+    modal.classList.add('active');
+
+    try {
+        const users = await api.getUsers();
+        renderUserSelectionGrid(users);
+    } catch (err) {
+        console.error(err);
+        grid.innerHTML = '<div class="text-center error">Error al cargar usuarios</div>';
     }
+}
 
-    function updateTableButtonUI(isActive) {
-        const btn = document.getElementById('table-action-btn');
-        if (!btn) return;
+function closeUserSelectionModal() {
+    document.getElementById('user-selection-modal').classList.remove('active');
+}
 
-        // We can change icon/text to indicate "Exit" vs "Table"
-        const spanText = btn.querySelector('span:last-child');
-        const spanIcon = btn.querySelector('.icon');
+function renderUserSelectionGrid(users) {
+    const grid = document.getElementById('user-selection-grid');
 
-        if (isActive) {
-            if (spanText) spanText.textContent = 'Salir Mesa';
-            if (spanIcon) spanIcon.textContent = '🚪'; // Door icon for exit
-            btn.classList.add('btn-warning'); // Make it look different
-        } else {
-            if (spanText) spanText.textContent = 'Mesa';
-            if (spanIcon) spanIcon.textContent = '🪑';
-            btn.classList.remove('btn-warning');
-        }
-    }
+    // Get current user name to highlight
+    const currentUserName = document.getElementById('user-display').textContent;
 
-    // User Selection Logic
-    async function openUserSelectionModal() {
-        const modal = document.getElementById('user-selection-modal');
-        const grid = document.getElementById('user-selection-grid');
-        grid.innerHTML = '<div class="text-center">Cargando usuarios...</div>';
-        modal.classList.add('active');
-
-        try {
-            const users = await api.getUsers();
-            renderUserSelectionGrid(users);
-        } catch (err) {
-            console.error(err);
-            grid.innerHTML = '<div class="text-center error">Error al cargar usuarios</div>';
-        }
-    }
-
-    function closeUserSelectionModal() {
-        document.getElementById('user-selection-modal').classList.remove('active');
-    }
-
-    function renderUserSelectionGrid(users) {
-        const grid = document.getElementById('user-selection-grid');
-
-        // Get current user name to highlight
-        const currentUserName = document.getElementById('user-display').textContent;
-
-        grid.innerHTML = users.map(user => {
-            const isActive = user.username === currentUserName;
-            return `
+    grid.innerHTML = users.map(user => {
+        const isActive = user.username === currentUserName;
+        return `
             <div class="user-card ${isActive ? 'active-user' : ''}" onclick="selectUser('${user.username}', ${user.id})">
                 <div class="user-avatar">👤</div>
                 <div class="user-name">${user.username}</div>
                 <div class="user-role">${user.role}</div>
             </div>
         `;
-        }).join('');
+    }).join('');
+}
+
+function selectUser(username, userId) {
+    // Update UI
+    const userDisplay = document.getElementById('user-display');
+    if (userDisplay) {
+        userDisplay.textContent = username;
     }
 
-    function selectUser(username, userId) {
-        // Update UI
-        const userDisplay = document.getElementById('user-display');
-        if (userDisplay) {
-            userDisplay.textContent = username;
-        }
-
-        // For now, we just update the UI active user as requested. 
-
-        closeUserSelectionModal();
-        showToast(`Usuario cambiado a ${username}`);
-    }
+    // For now, we just update the UI active user as requested. 
+    closeUserSelectionModal();
+    showToast(`Usuario cambiado a ${username}`);
 }

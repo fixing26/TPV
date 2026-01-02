@@ -37,7 +37,8 @@ async def create_cash_closing(
         func.max(Sale.created_at),
         func.count(Sale.id),
         func.sum(Sale.total)
-    )
+    ).where(Sale.tenant_id == current_user.tenant_id)
+
     result_ranges = await db.execute(stmt_ranges)
     min_id, max_id, min_date, max_date, count, grand_total = result_ranges.one()
     
@@ -46,12 +47,12 @@ async def create_cash_closing(
 
     # Get totals by payment method
     # Cash
-    stmt_cash = select(func.sum(Sale.total)).where(Sale.payment_method == "cash")
+    stmt_cash = select(func.sum(Sale.total)).where(Sale.payment_method == "cash", Sale.tenant_id == current_user.tenant_id)
     result_cash = await db.execute(stmt_cash)
     total_cash = result_cash.scalar() or 0.0
 
     # Card
-    stmt_card = select(func.sum(Sale.total)).where(Sale.payment_method == "card")
+    stmt_card = select(func.sum(Sale.total)).where(Sale.payment_method == "card", Sale.tenant_id == current_user.tenant_id)
     result_card = await db.execute(stmt_card)
     total_card = result_card.scalar() or 0.0
 
@@ -59,6 +60,7 @@ async def create_cash_closing(
     closing = CashClosing(
         closing_type="X",
         user_id=current_user.id,
+        tenant_id=current_user.tenant_id,
         from_sales=min_id,
         to_sales=max_id,
         from_date=min_date,
@@ -96,7 +98,8 @@ async def delete_sales(
         func.max(Sale.created_at),
         func.count(Sale.id),
         func.sum(Sale.total)
-    )
+    ).where(Sale.tenant_id == current_user.tenant_id)
+    
     result_ranges = await db.execute(stmt_ranges)
     min_id, max_id, min_date, max_date, count, grand_total = result_ranges.one()
     
@@ -105,12 +108,12 @@ async def delete_sales(
 
     # Get totals by payment method
     # Cash
-    stmt_cash = select(func.sum(Sale.total)).where(Sale.payment_method == "cash")
+    stmt_cash = select(func.sum(Sale.total)).where(Sale.payment_method == "cash", Sale.tenant_id == current_user.tenant_id)
     result_cash = await db.execute(stmt_cash)
     total_cash = result_cash.scalar() or 0.0
 
     # Card
-    stmt_card = select(func.sum(Sale.total)).where(Sale.payment_method == "card")
+    stmt_card = select(func.sum(Sale.total)).where(Sale.payment_method == "card", Sale.tenant_id == current_user.tenant_id)
     result_card = await db.execute(stmt_card)
     total_card = result_card.scalar() or 0.0
 
@@ -118,6 +121,7 @@ async def delete_sales(
     closing = CashClosing(
         closing_type="Z",
         user_id=current_user.id,
+        tenant_id=current_user.tenant_id,
         from_sales=min_id,
         to_sales=max_id,
         from_date=min_date,
@@ -137,7 +141,7 @@ async def delete_sales(
     Delete all sales data.
     """
     result_sales_to_delete = await db.execute(
-        select(Sale).where(Sale.id.between(min_id, max_id))
+        select(Sale).where(Sale.id.between(min_id, max_id), Sale.tenant_id == current_user.tenant_id)
     )
     sales_to_delete = result_sales_to_delete.scalars().all()
     try:

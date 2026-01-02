@@ -23,7 +23,8 @@ class Category(Base):
     __tablename__ = "categories"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, unique=True, index=True, nullable=False)
+    name = Column(String, index=True, nullable=False) # Removed unique constraint (unique per tenant)
+    tenant_id = Column(String, nullable=False, index=True)
 
     products = relationship("Product", back_populates="category")
 
@@ -48,7 +49,7 @@ class Product(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False, index=True)
-    sku = Column(String, unique=True, index=True, nullable=True) # Added SKU as it was in docstring but missing in code or implied? Checking original code... 
+    sku = Column(String, index=True, nullable=True) 
     # Wait, original code snippet in my memory:
     # 30:     id = Column(Integer, primary_key=True, index=True)
     # 31:     name = Column(String, nullable=False, index=True)
@@ -67,6 +68,7 @@ class Product(Base):
     price = Column(Float, nullable=False)
     tax = Column(Float, default=0.0)
     active = Column(Boolean, default=True)
+    tenant_id = Column(String, nullable=False, index=True)
     
     category_id = Column(Integer, ForeignKey("categories.id"), nullable=False)
     category = relationship("Category", back_populates="products")

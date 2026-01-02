@@ -11,23 +11,34 @@ from sqlalchemy.orm import selectinload
 from .models import Product, Category
 from .schemas import ProductCreate, ProductUpdate, ProductOut, CategoryCreate, CategoryOut, CategoryUpdate
 from ..db import get_session
+from ..auth.dependencies import get_current_user
+from ..auth.models import User
 
 router = APIRouter()
 
 
 @router.get("/", response_model=List[ProductOut])
-async def list_products(db: AsyncSession = Depends(get_session),skip: int = 0,limit: int = 100,):
+async def list_products(
+    skip: int = 0,
+    limit: int = 100,
+    db: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
     """List products."""
-    query = select(Product).options(selectinload(Product.category)).offset(skip).limit(limit)
+    query = select(Product).options(selectinload(Product.category)).where(Product.tenant_id == current_user.tenant_id).offset(skip).limit(limit)
     result = await db.execute(query)
     products = result.scalars().all()
     return products
 
 
 @router.get("/{product_id}", response_model=ProductOut)
-async def get_product(product_id: int,db: AsyncSession = Depends(get_session),):
+async def get_product(
+    product_id: int,
+    db: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
     """Get product by ID."""
-    result = await db.execute(select(Product).options(selectinload(Product.category)).where(Product.id == product_id))
+    result = await db.execute(select(Product).options(selectinload(Product.category)).where(Product.id == product_id, Product.tenant_id == current_user.tenant_id))
     product = result.scalar_one_or_none()
     if not product:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
@@ -35,10 +46,20 @@ async def get_product(product_id: int,db: AsyncSession = Depends(get_session),):
 
 
 @router.post("/", response_model=ProductOut, status_code=status.HTTP_201_CREATED)
-async def create_product(product_in: ProductCreate,db: AsyncSession = Depends(get_session),):
+async def create_product(
+    product_in: ProductCreate,
+    db: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
     """Create product."""
+    
+    # Verify Category belongs to tenant
+    cat_res = await db.execute(select(Category).where(Category.id == product_in.category_id, Category.tenant_id == current_user.tenant_id))
+    if not cat_res.scalar_one_or_none():
+         raise HTTPException(status_code=400, detail="Categoría no válida")
 
     product = Product(**product_in.model_dump())
+    product.tenant_id = current_user.tenant_id # Assign Tenant
     db.add(product)
     await db.commit()
     # Reload with relation for Pydantic response
@@ -48,9 +69,14 @@ async def create_product(product_in: ProductCreate,db: AsyncSession = Depends(ge
 
 
 @router.put("/{product_id}", response_model=ProductOut)
-async def update_product(product_id: int,product_in: ProductUpdate,db: AsyncSession = Depends(get_session),):
+async def update_product(
+    product_id: int,
+    product_in: ProductUpdate,
+    db: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
     """Update product."""
-    result = await db.execute(select(Product).where(Product.id == product_id))
+    result = await db.execute(select(Product).where(Product.id == product_id, Product.tenant_id == current_user.tenant_id))
     product = result.scalar_one_or_none()
     if not product:
         raise HTTPException(status_code=404, detail="Producto no encontrado")
@@ -68,36 +94,49 @@ async def update_product(product_id: int,product_in: ProductUpdate,db: AsyncSess
     return product
 
 
-
 @router.post("/categories/", response_model=CategoryOut, status_code=status.HTTP_201_CREATED)
-async def create_category(category_in: CategoryCreate, db: AsyncSession = Depends(get_session)):
+async def create_category(
+    category_in: CategoryCreate, 
+    db: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
     """
     Create a new category.
     """
     category = Category(**category_in.model_dump())
+    category.tenant_id = current_user.tenant_id
     db.add(category)
     await db.commit()
     await db.refresh(category)
     return category
 
 
-
 @router.get("/categories/", response_model=List[CategoryOut])
-async def list_categories(db: AsyncSession = Depends(get_session), skip: int = 0, limit: int = 100):
+async def list_categories(
+    skip: int = 0, 
+    limit: int = 100,
+    db: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
     """
     List categories.
     """
-    result = await db.execute(select(Category).offset(skip).limit(limit))
+    result = await db.execute(select(Category).where(Category.tenant_id == current_user.tenant_id).offset(skip).limit(limit))
     categories = result.scalars().all()
     return categories
 
 
 @router.put("/categories/{category_id}", response_model=CategoryOut)
-async def update_category(category_id: int, category_in: CategoryUpdate, db: AsyncSession = Depends(get_session)):
+async def update_category(
+    category_id: int, 
+    category_in: CategoryUpdate, 
+    db: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
     """
     Update a category.
     """
-    result = await db.execute(select(Category).where(Category.id == category_id))
+    result = await db.execute(select(Category).where(Category.id == category_id, Category.tenant_id == current_user.tenant_id))
     category = result.scalar_one_or_none()
     if not category:
         raise HTTPException(status_code=404, detail="Categoría no encontrada")
@@ -110,9 +149,13 @@ async def update_category(category_id: int, category_in: CategoryUpdate, db: Asy
 
 
 @router.delete("/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_product(product_id: int,db: AsyncSession = Depends(get_session)):
+async def delete_product(
+    product_id: int,
+    db: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
     """Delete product."""
-    result = await db.execute(select(Product).where(Product.id == product_id))
+    result = await db.execute(select(Product).where(Product.id == product_id, Product.tenant_id == current_user.tenant_id))
     product = result.scalar_one_or_none()
     if not product:
         raise HTTPException(status_code=404, detail="Producto no encontrado")

@@ -26,9 +26,46 @@ async def lifespan(app: FastAPI):
         from sqlalchemy import text
         try:
              await conn.execute(text("ALTER TABLE sales ADD COLUMN IF NOT EXISTS closed_by_id INTEGER REFERENCES users(id);"))
-             print("Migration: closed_by_id column checked/added.")
+             
+             # Multi-tenancy Migrations
+             # Define a default tenant for existing legacy data
+             default_tenant = "legacy_tenant"
+
+             # Users
+             await conn.execute(text(f"ALTER TABLE users ADD COLUMN IF NOT EXISTS tenant_id VARCHAR DEFAULT '{default_tenant}';"))
+             await conn.execute(text("CREATE INDEX IF NOT EXISTS ix_users_tenant_id ON users (tenant_id);"))
+             
+             # Products
+             await conn.execute(text(f"ALTER TABLE products ADD COLUMN IF NOT EXISTS tenant_id VARCHAR DEFAULT '{default_tenant}';"))
+             await conn.execute(text("CREATE INDEX IF NOT EXISTS ix_products_tenant_id ON products (tenant_id);"))
+             # Extra fixes for products
+             await conn.execute(text("ALTER TABLE products ADD COLUMN IF NOT EXISTS sku VARCHAR;"))
+             await conn.execute(text("ALTER TABLE products ADD COLUMN IF NOT EXISTS category_id INTEGER REFERENCES categories(id);"))
+
+             # Relax constraints for legacy unique constraints that might fail with multiple tenants
+             # (Note: SQLite doesn't support dropping constraints easily in one line, but PostgreSQL does.
+             # Assuming PostgreSQL based on error logs showing dialects/postgresql)
+             
+             # Categories
+             await conn.execute(text(f"ALTER TABLE categories ADD COLUMN IF NOT EXISTS tenant_id VARCHAR DEFAULT '{default_tenant}';"))
+             await conn.execute(text("CREATE INDEX IF NOT EXISTS ix_categories_tenant_id ON categories (tenant_id);"))
+             
+             # Tables
+             await conn.execute(text(f"ALTER TABLE tables ADD COLUMN IF NOT EXISTS tenant_id VARCHAR DEFAULT '{default_tenant}';"))
+             await conn.execute(text("CREATE INDEX IF NOT EXISTS ix_tables_tenant_id ON tables (tenant_id);"))
+
+             # Sales
+             await conn.execute(text(f"ALTER TABLE sales ADD COLUMN IF NOT EXISTS tenant_id VARCHAR DEFAULT '{default_tenant}';"))
+             await conn.execute(text("CREATE INDEX IF NOT EXISTS ix_sales_tenant_id ON sales (tenant_id);"))
+
+             # Cash Closings
+             await conn.execute(text(f"ALTER TABLE cash_closings ADD COLUMN IF NOT EXISTS tenant_id VARCHAR DEFAULT '{default_tenant}';"))
+             await conn.execute(text("CREATE INDEX IF NOT EXISTS ix_cash_closings_tenant_id ON cash_closings (tenant_id);"))
+
+             print("Migration: tenant_id columns checked/added.")
         except Exception as e:
-             print(f"Migration error (harmless if column exists): {e}")
+             print(f"Migration error: {e}")
+
 
     print("Tablas verificadas")
     yield

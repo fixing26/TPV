@@ -40,6 +40,7 @@ class Sale(Base):
     
     table_id = Column(Integer, ForeignKey("tables.id"), nullable=True)
     name = Column(String, nullable=True)
+    tenant_id = Column(String, nullable=False, index=True)
 
     lines = relationship(
         "SaleLine",
