@@ -21,8 +21,8 @@
             <h2 class="auth-title">Iniciar Sesión</h2>
             <form id="login-form" onsubmit="handleLogin(event)">
                 <div class="form-group">
-                    <label class="form-label">Usuario</label>
-                    <input type="text" name="username" class="form-input" required>
+                    <label class="form-label">Email</label>
+                    <input type="email" name="username" class="form-input" required>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Contraseña</label>
@@ -48,12 +48,15 @@
             <h2 class="auth-title">Registro</h2>
             <form id="register-form" onsubmit="handleRegister(event)">
                 <div class="form-group">
-                    <label class="form-label">Usuario</label>
-                    <input type="text" name="username" class="form-input" required>
+                    <label class="form-label">Email</label>
+                    <input type="email" name="username" class="form-input" required>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Contraseña</label>
                     <input type="password" name="password" class="form-input" required>
+                    <small style="display: block; color: #6b7280; margin-top: 0.25rem; font-size: 0.75rem;">
+                        Mínimo 8 caracteres, 1 mayúscula, 1 número y 1 carácter especial (!@#$%^&*)
+                    </small>
                 </div>
                 <button type="submit" class="btn btn-primary">Registrarse</button>
             </form>

@@ -27,6 +27,31 @@ async function handleRegister(e) {
     const username = e.target.username.value;
     const password = e.target.password.value;
 
+    // Validate Email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(username)) {
+        showToast('Por favor introduce un email válido', 'error');
+        return;
+    }
+
+    // Validate Password
+    if (password.length < 8) {
+        showToast('La contraseña debe tener al menos 8 caracteres', 'error');
+        return;
+    }
+    if (!/[A-Z]/.test(password)) {
+        showToast('La contraseña debe contener al menos una mayúscula', 'error');
+        return;
+    }
+    if (!/\d/.test(password)) {
+        showToast('La contraseña debe contener al menos un número', 'error');
+        return;
+    }
+    if (!/[!@#$%^&*]/.test(password)) {
+        showToast('La contraseña debe contener al menos un carácter especial (!@#$%^&*)', 'error');
+        return;
+    }
+
     try {
         await api.register(username, password);
         showToast('Usuario registrado. Por favor inicia sesión.');
