@@ -1,6 +1,3 @@
-/**
- * Shared Utility Functions
- */
 
 /**
  * Checks authentication status and redirects if necessary.
@@ -15,10 +12,6 @@ function checkAuth(requireAuth = true) {
         window.location.href = 'menu.html';
     }
 }
-
-/**
- * Logs out the user.
- */
 function logout() {
     api.logout();
 }

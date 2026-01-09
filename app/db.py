@@ -1,4 +1,3 @@
-"""Database configuration."""
 
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
@@ -14,6 +13,6 @@ SessionLocal = sessionmaker(
 Base = declarative_base()
 
 async def get_session() -> AsyncSession:
-    """Yields async database session."""
+
     async with SessionLocal() as session:
         yield session

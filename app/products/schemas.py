@@ -1,28 +1,22 @@
-"""
-Product schemas module.
 
-Defines Pydantic models for product validation.
-"""
 
 from pydantic import BaseModel
 
 
 
 class CategoryBase(BaseModel):
-    """Base schema for Category data."""
+
     name: str
 
 
 class CategoryCreate(CategoryBase):
-    """Schema for creating a new category."""
     pass
 
 class CategoryUpdate(BaseModel):
-    """Schema for updating a category."""
+
     name: str
 
 class CategoryOut(CategoryBase):
-    """Schema for category response."""
     id: int
 
     class Config:
@@ -30,8 +24,7 @@ class CategoryOut(CategoryBase):
 
 
 
-class ProductBase(BaseModel):
-    """Base schema for Product data."""
+class ProductBase(BaseModel): 
     name: str
     price: float
     tax: float = 0.0
@@ -41,12 +34,11 @@ class ProductBase(BaseModel):
 
 
 class ProductCreate(ProductBase):
-    """Schema for creating a new product."""
+  
     category_id: int 
 
 
 class ProductUpdate(BaseModel):
-    """Schema for updating an existing product (partial update)."""
     name: str | None = None
     price: float | None = None
     tax: float | None = None
@@ -56,9 +48,9 @@ class ProductUpdate(BaseModel):
 
 
 class ProductOut(ProductBase):
-    """Schema for product response."""
+
     id: int
     category: CategoryOut | None = None
 
     class Config:
-        from_attributes = True  # Pydantic v2 (equiv. orm_mode=True)
+        from_attributes = True  

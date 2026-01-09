@@ -1,6 +1,3 @@
-/**
- * Sales Logic
- */
 
 document.addEventListener('DOMContentLoaded', () => {
     checkAuth(true);

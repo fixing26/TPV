@@ -1,11 +1,6 @@
-/**
- * Products Logic
- */
-
 
 document.addEventListener('DOMContentLoaded', () => {
     checkAuth(true);
-    // Restrict access to Admin
     if (localStorage.getItem('role') !== 'admin') {
         alert('Acceso restringido a administradores');
         window.location.href = 'menu.html';
@@ -41,12 +36,9 @@ function renderProducts(products) {
 }
 
 function renderCategoryOptions(categories) {
-    // 1. Fill Select for Product Form
     const select = document.getElementById('category-select');
     select.innerHTML = '<option value="">Seleccionar Categoría...</option>' +
         categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-
-    // 2. Render Management List
     const list = document.getElementById('categories-list');
     if (list) {
         list.innerHTML = categories.map(c => `

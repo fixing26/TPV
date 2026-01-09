@@ -1,6 +1,4 @@
-"""
-Cash closing models module.
-"""
+
 from sqlalchemy import Column, Integer, Float, ForeignKey, String
 from sqlalchemy.orm import relationship
 from datetime import datetime
@@ -8,9 +6,7 @@ from datetime import datetime
 from ..db import Base
 
 class CashClosing(Base):
-    """
-    Cash Closing database model.
-    """
+
     __tablename__ = "cash_closings"
 
     id = Column(Integer, primary_key=True, index=True)

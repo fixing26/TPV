@@ -1,11 +1,9 @@
-/* Auth Specific Styles */
 .auth-container {
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100vh;
     background-color: #111827;
-    /* Dark background */
 }
 
 .auth-card {

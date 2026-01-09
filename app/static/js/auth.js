@@ -1,9 +1,6 @@
-/**
- * Auth Logic
- */
 
 document.addEventListener('DOMContentLoaded', () => {
-    checkAuth(false); // Redirect to menu if already logged in
+    checkAuth(false);
 });
 
 async function handleLogin(e) {

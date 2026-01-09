@@ -116,9 +116,6 @@ function renderProductsGrid() {
     }
 
     grid.innerHTML = filteredProducts.map((p, index) => {
-        // Color variation logic based on index or category could go here
-        // For now simple cycle based on id just to vary it
-        // Or keep css nth-child logic which handles it based on DOM position
         return `
         <div class="product-btn" onclick="addToCart(${p.id})">
             <div>${p.name}</div>
@@ -182,7 +179,7 @@ function renderCart() {
     totalEl.textContent = `${total.toFixed(2)}€`;
 }
 
-// Selection Logic
+
 function selectCartItem(index) {
     state.selectedCartIndex = index;
     state.selectedCartIndex = index;
@@ -195,9 +192,6 @@ function removeSelectedItem() {
         state.selectedCartIndex = null;
     }
 }
-
-// Numpad logic
-// Numpad logic
 function numpadInput(key) {
     if (key === 'C') {
         state.numpadBuffer = '';
@@ -209,11 +203,7 @@ function numpadInput(key) {
     }
 
     updateNumpadDisplay();
-
-    // If a cart item is selected, we MIGHT update it immediately?
-    // If item selected, numpad updates it directly? 
     if (state.selectedCartIndex !== null && state.cart[state.selectedCartIndex]) {
-        // Future: implement type to edit selected
     }
 }
 
@@ -275,7 +265,6 @@ async function saveOrder() {
             quantity: item.quantity
         }));
 
-        // Schema expects payment_method? strict check? Schema says optional.
         const saleData = {
             lines: lines
         };
@@ -296,8 +285,6 @@ async function saveOrder() {
             showToast(err.message, 'error');
         }
     }
-
-    // Table Selection Logic
     let availableTables = [];
     let activeSalesForSelection = [];
 
@@ -331,8 +318,6 @@ async function saveOrder() {
             const isBusy = !!sale;
             const total = sale ? sale.total.toFixed(2) + '€' : 'Libre';
             const statusClass = isBusy ? 'status-busy' : 'status-free';
-
-            // Simplified table card for modal
             return `
             <div class="table-card ${statusClass}" 
                  onclick="selectTableForSave(${table.id}, ${isBusy ? (sale ? sale.id : 'null') : 'null'})">
@@ -343,21 +328,15 @@ async function saveOrder() {
             </div>
         `;
         }).join('');
-
-        // Grid styling is now handled by active_orders.css included in pos.html
-        // but we can ensure the container has the class
         grid.className = 'tables-grid';
-        grid.style.display = 'grid'; // Ensure grid display if css fails or overrides
-        // Remove manual style injections that conflict with css class
+        grid.style.display = 'grid';
         grid.style.gridTemplateColumns = '';
         grid.style.gap = '';
     }
 
     function renderOpenTablesSideList() {
         const container = document.getElementById('open-tables-list');
-        if (!container) return; // Guard clause
-
-        // Filter active sales that are assigned to a table
+        if (!container) return;
         const tableSales = state.activeSales.filter(s => s.table_id);
 
         if (tableSales.length === 0) {
@@ -385,28 +364,24 @@ async function saveOrder() {
 
     async function selectTableForSave(tableId, existingSaleId) {
         if (existingSaleId) {
-            // Add to existing sale - DIRECTLY (No confirmation asked)
             state.saleId = existingSaleId;
             closeTableModal();
-            await saveOrder(); // Recursive call, but now state.saleId is set
-
-            // Fix: Update Header
+            await saveOrder();
             const sale = await api.getSale(state.saleId);
             state.currentSale = sale;
             updateSaleInfo(sale);
             updateTableButtonUI(true);
         } else {
-            // Open new sale
+
             try {
                 const sale = await api.openSale({ table_id: tableId });
                 state.saleId = sale.id;
-                // Fix: Set current sale immediately
+
                 state.currentSale = sale;
 
                 closeTableModal();
-                await saveOrder(); // Recursive call
+                await saveOrder();
 
-                // Fix: Update Header
                 updateSaleInfo(sale);
                 updateTableButtonUI(true);
 
@@ -421,12 +396,6 @@ function openPaymentModal() {
     if (state.cart.length === 0 && !state.saleId) return;
 
     const currentTotal = parseFloat(document.getElementById('cart-total').textContent.replace('€', ''));
-
-    // If we have an active sale (server side), the local cart might be partial updates?
-    // But `state.activeSales` has the server total? 
-    // Actually `renderCart` calculates total from `state.cart`.
-    // If we are in edit mode, `state.cart` represents the full state.
-
     document.getElementById('payment-total-display').textContent = currentTotal.toFixed(2) + '€';
 
     const modal = document.getElementById('payment-modal');
@@ -443,7 +412,6 @@ async function processPayment(paymentMethod) {
 
     try {
         if (state.saleId) {
-            // Update sale with current cart content (Sync before close)
             const lines = state.cart.map(item => ({
                 product_id: item.product.id,
                 quantity: item.quantity
@@ -515,8 +483,6 @@ function handleTableButton() {
 function updateTableButtonUI(isActive) {
     const btn = document.getElementById('table-action-btn');
     if (!btn) return;
-
-    // We can change icon/text to indicate "Exit" vs "Table"
     const spanText = btn.querySelector('span:last-child');
     const spanIcon = btn.querySelector('.icon');
 
@@ -530,8 +496,6 @@ function updateTableButtonUI(isActive) {
         btn.classList.remove('btn-warning');
     }
 }
-
-// User Selection Logic
 async function openUserSelectionModal() {
     const modal = document.getElementById('user-selection-modal');
     const grid = document.getElementById('user-selection-grid');
@@ -553,8 +517,6 @@ function closeUserSelectionModal() {
 
 function renderUserSelectionGrid(users) {
     const grid = document.getElementById('user-selection-grid');
-
-    // Get current user name to highlight
     const currentUserName = document.getElementById('user-display').textContent;
 
     grid.innerHTML = users.map(user => {
@@ -570,13 +532,11 @@ function renderUserSelectionGrid(users) {
 }
 
 function selectUser(username, userId) {
-    // Update UI
     const userDisplay = document.getElementById('user-display');
     if (userDisplay) {
         userDisplay.textContent = username;
     }
 
-    // For now, we just update the UI active user as requested. 
     closeUserSelectionModal();
     showToast(`Usuario cambiado a ${username}`);
 }

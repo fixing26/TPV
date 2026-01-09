@@ -1,4 +1,4 @@
-"""Product routes."""
+
 
 from typing import List
 
@@ -24,7 +24,6 @@ async def list_products(
     db: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    """List products."""
     query = select(Product).options(selectinload(Product.category)).where(Product.tenant_id == current_user.tenant_id).offset(skip).limit(limit)
     result = await db.execute(query)
     products = result.scalars().all()
@@ -37,7 +36,7 @@ async def get_product(
     db: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    """Get product by ID."""
+
     result = await db.execute(select(Product).options(selectinload(Product.category)).where(Product.id == product_id, Product.tenant_id == current_user.tenant_id))
     product = result.scalar_one_or_none()
     if not product:
@@ -51,7 +50,7 @@ async def create_product(
     db: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    """Create product."""
+
     
     # Verify Category belongs to tenant
     cat_res = await db.execute(select(Category).where(Category.id == product_in.category_id, Category.tenant_id == current_user.tenant_id))
@@ -75,7 +74,7 @@ async def update_product(
     db: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    """Update product."""
+
     result = await db.execute(select(Product).where(Product.id == product_id, Product.tenant_id == current_user.tenant_id))
     product = result.scalar_one_or_none()
     if not product:
@@ -100,9 +99,7 @@ async def create_category(
     db: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    """
-    Create a new category.
-    """
+
     category = Category(**category_in.model_dump())
     category.tenant_id = current_user.tenant_id
     db.add(category)
@@ -118,9 +115,7 @@ async def list_categories(
     db: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    """
-    List categories.
-    """
+
     result = await db.execute(select(Category).where(Category.tenant_id == current_user.tenant_id).offset(skip).limit(limit))
     categories = result.scalars().all()
     return categories
@@ -133,9 +128,7 @@ async def update_category(
     db: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    """
-    Update a category.
-    """
+
     result = await db.execute(select(Category).where(Category.id == category_id, Category.tenant_id == current_user.tenant_id))
     category = result.scalar_one_or_none()
     if not category:
@@ -154,7 +147,7 @@ async def delete_product(
     db: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    """Delete product."""
+
     result = await db.execute(select(Product).where(Product.id == product_id, Product.tenant_id == current_user.tenant_id))
     product = result.scalar_one_or_none()
     if not product:

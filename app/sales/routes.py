@@ -1,4 +1,3 @@
-"""Sales routes."""
 
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -23,7 +22,7 @@ async def create_sale(
     db: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    """Create new sale (Immediate Close)."""
+
     if not sale_in.lines:
         raise HTTPException(status_code=400, detail="La venta debe tener al menos una línea.")
 
@@ -81,7 +80,6 @@ async def open_account(
     db: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    """Open new account/table."""
     # Check if table exists and is free if provided
     if account_in.table_id:
         # Check if table exists
@@ -129,7 +127,6 @@ async def list_active_accounts(
     db: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    """List OPEN accounts."""
     result = await db.execute(
         select(Sale)
         .options(
@@ -150,7 +147,6 @@ async def add_lines_to_account(
     db: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    """Add items to account."""
     result = await db.execute(select(Sale).where(Sale.id == sale_id, Sale.tenant_id == current_user.tenant_id))
     sale = result.scalar_one_or_none()
     
@@ -205,7 +201,6 @@ async def update_sale(
     db: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    """Update sale (replace lines)."""
     # Load with collection to cleanly delete/update
     result = await db.execute(select(Sale).options(selectinload(Sale.lines)).where(Sale.id == sale_id, Sale.tenant_id == current_user.tenant_id))
     sale = result.scalar_one_or_none()

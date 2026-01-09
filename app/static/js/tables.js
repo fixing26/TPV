@@ -4,7 +4,6 @@ const state = {
 
 document.addEventListener('DOMContentLoaded', () => {
     checkAuth(true);
-    // Restrict access to Admin
     if (localStorage.getItem('role') !== 'admin') {
         alert('Acceso restringido a administradores');
         window.location.href = 'menu.html';
@@ -25,8 +24,6 @@ async function loadTables() {
                 ${t.description ? `<div style="font-size:0.8rem; color:#666;">${t.description}</div>` : ''}
             </div>
         `).join('');
-
-        // Add "New Table" button
         html += `
             <div class="table-card add-table-card" onclick="openNewTable()">
                 <div class="table-icon">➕</div>

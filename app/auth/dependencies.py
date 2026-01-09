@@ -1,8 +1,3 @@
-"""
-Authentication dependencies module.
-
-Provides dependency injection for retrieving the current authenticated user.
-"""
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -22,19 +17,7 @@ async def get_current_user(
     token: str = Depends(oauth2_scheme),
     db: AsyncSession = Depends(get_session)
 ) -> User:
-    """
-    Dependency to get the current authenticated user from the JWT token.
-    
-    Args:
-        token (str): JWT token from the Authorization header.
-        db (AsyncSession): Database session.
-    
-    Returns:
-        User: The authenticated user object.
-    
-    Raises:
-        HTTPException: If the token is invalid or the user does not exist.
-    """
+
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",

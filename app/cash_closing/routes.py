@@ -1,6 +1,4 @@
-"""
-Cash closing routes module.
-"""
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, delete
@@ -19,17 +17,6 @@ async def create_cash_closing(
     db: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    """
-    Perform a cash closing.
-    
-    This calculates totals and saves the closing record.
-    It does NOT delete sales data. Use DELETE /sales for that.
-    """
-    
-    # 1. Calculate stats from existing sales
-    # We can do this with efficient SQL queries
-    
-    # Get ID range and Date range
     stmt_ranges = select(
         func.min(Sale.id),
         func.max(Sale.id),
@@ -84,13 +71,7 @@ async def delete_sales(
     db: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    """
-    Create a new cash closing record with type "Z"
-    """
-        # 1. Calculate stats from existing sales
-    # We can do this with efficient SQL queries
-    
-    # Get ID range and Date range
+
     stmt_ranges = select(
         func.min(Sale.id),
         func.max(Sale.id),
@@ -136,10 +117,7 @@ async def delete_sales(
     await db.flush() # Get ID
     await db.refresh(closing)
     await db.commit()
-    
-    """
-    Delete all sales data.
-    """
+
     result_sales_to_delete = await db.execute(
         select(Sale).where(Sale.id.between(min_id, max_id), Sale.tenant_id == current_user.tenant_id)
     )

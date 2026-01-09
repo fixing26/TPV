@@ -1,10 +1,6 @@
-/**
- * User Management Logic
- */
 
 document.addEventListener('DOMContentLoaded', () => {
     checkAuth(true);
-    // Verify Admin Role
     const role = localStorage.getItem('role');
     if (role !== 'admin') {
         alert('Acceso no autorizado');
@@ -52,7 +48,7 @@ async function handleCreateUser(e) {
     try {
         await api.createUser({
             username: username,
-            password: pin, // Map PIN to password field
+            password: pin,
             role: role
         });
         showToast('Usuario creado con éxito');

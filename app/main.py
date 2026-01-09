@@ -1,4 +1,4 @@
-"""Main application entry point."""
+
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
@@ -18,7 +18,6 @@ from app.tables.models import Table
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Lifespan context manager: handles startup (db) and shutdown."""
     # --- STARTUP ---
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

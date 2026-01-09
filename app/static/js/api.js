@@ -1,9 +1,5 @@
-const API_URL = ''; // Relative path
+const API_URL = '';
 
-/**
- * API Client
- * Handles all HTTP requests to the backend API.
- */
 class ApiClient {
     constructor() {
         this.token = localStorage.getItem('token');

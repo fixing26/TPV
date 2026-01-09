@@ -1,8 +1,4 @@
-"""
-Sales models module.
 
-Defines the database models for sales (tickets) and sale lines.
-"""
 
 from sqlalchemy import Column, Integer, Float, String, ForeignKey
 from sqlalchemy.orm import relationship
@@ -12,20 +8,7 @@ from ..db import Base
 
 
 class Sale(Base):
-    """
-    Sale (Ticket) database model.
 
-    Attributes:
-        id (int): Primary key.
-        total (float): Total amount of the sale.
-        payment_method (str): Payment method (e.g., 'cash', 'card').
-        status (str): Status of the sale (OPEN, CLOSED, CANCELLED).
-        created_at (float): Timestamp when the sale was created.
-        user_id (int): ID of the user who made the sale (optional).
-        table_id (int): ID of the table (optional).
-        name (str): Name for the account/order (optional).
-        lines (List[SaleLine]): List of sale lines associated with this sale.
-    """
     __tablename__ = "sales"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -54,19 +37,7 @@ class Sale(Base):
 
 
 class SaleLine(Base):
-    """
-    Sale Line database model.
 
-    Represents a single product line within a sale.
-
-    Attributes:
-        id (int): Primary key.
-        sale_id (int): ID of the parent sale.
-        product_id (int): ID of the product sold.
-        quantity (int): Quantity of the product.
-        price_unit (float): Unit price at the time of sale.
-        line_total (float): Total price for this line (quantity * price_unit).
-    """
     __tablename__ = "sale_lines"
 
     id = Column(Integer, primary_key=True, index=True)

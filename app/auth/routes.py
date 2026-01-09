@@ -1,8 +1,4 @@
-"""
-Authentication routes module.
 
-Handles user registration and login endpoints.
-"""
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,9 +17,6 @@ from uuid import uuid4
 
 @router.post("/register", response_model=UserOut)
 async def register(user_in: UserCreate, db: AsyncSession = Depends(get_session)):
-    """
-    Register a new user (Creates a NEW TENANT).
-    """
     try:
         result = await db.execute(select(User).where(User.username == user_in.username))
         existing = result.scalar_one_or_none()
@@ -49,9 +42,7 @@ async def register(user_in: UserCreate, db: AsyncSession = Depends(get_session))
 
 @router.post("/login", response_model=Token)
 async def login(user_in: UserCreate, db: AsyncSession = Depends(get_session)):
-    """
-    Authenticate a user and return a JWT token.
-    """
+
     result = await db.execute(select(User).where(User.username == user_in.username))
     user = result.scalar_one_or_none()
     if not user or not verify_password(user_in.password, user.hashed_password):
@@ -71,9 +62,7 @@ async def create_user(
     db: AsyncSession = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
-    """
-    Create a new user within the SAME TENANT (Internal use by Admin).
-    """
+
     if current_user.role != "admin":
          raise HTTPException(status_code=403, detail="Solo administradores pueden crear usuarios")
 
